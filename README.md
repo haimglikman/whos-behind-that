@@ -1,5 +1,12 @@
 ## Changelog
 
+### v1.2
+- Reweighted scoring: hidden interest 55%, modus operandi 35%, public narrative 10%
+- Updated Claude prompt: explicit manipulation detection philosophy — scores who benefits and how it was built, not just what it says
+- UI labels now show dimension weights in entity match cards
+- Richer 2–3 sentence "why" explanations citing specific post phrases and hidden interests served
+- Demo scores recalculated under new model
+
 ### v1.1
 - AI scoring engine: narrative matching now uses Claude AI (claude-sonnet) to semantically score post text against each entity's public narrative, interest, and modus operandi
 - Post history tab: every analysis logged with URL, timestamp, score, and top entity matches
