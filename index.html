@@ -373,8 +373,20 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           <h2>Changelog</h2>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.1</div>
+            <div class="changelog-ver">v1.2</div>
             <div class="changelog-date">Current version</div>
+            <ul>
+              <li><strong>Reweighted scoring engine:</strong> Combined score now weights hidden interest at 55%, modus operandi at 35%, and public narrative at only 10% — reflecting that manipulation is primarily detected through <em>who benefits</em> and <em>how it was constructed</em>, not just what it says.</li>
+              <li><strong>Richer Claude prompt:</strong> The scoring prompt now explicitly instructs Claude on the philosophy of manipulation detection, with detailed guidance on scoring each dimension independently and citing specific post phrases as evidence.</li>
+              <li><strong>Updated UI labels:</strong> Dimension bars in entity match cards now show their weights (55% / 35% / 10%) so the scoring logic is transparent to the user.</li>
+              <li><strong>Improved "why" explanations:</strong> Claude now returns 2–3 sentence explanations per match, specifying which hidden interest is served and which MO tactics are present.</li>
+              <li><strong>Updated demo scores:</strong> All three demo scenarios recalculated under the new weighting model.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v1.1</div>
+            <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>AI scoring engine:</strong> Narrative matching now uses Claude AI (claude-sonnet) to semantically score post text against each entity's public narrative, interest, and modus operandi — replacing static hardcoded scores.</li>
               <li><strong>Post history tab:</strong> Every analysis is logged with URL, timestamp, overall score, and top entity matches. Persisted in browser localStorage.</li>
@@ -418,7 +430,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 
 // ─────────────────────────────────────────────
 // DEFAULT ENTITY DATABASE
@@ -526,7 +538,10 @@ async function scorePostAgainstEntities(postText, entities, anthropicKey) {
     `ID:${e.id} NAME:${e.name} TYPE:${e.type}\nNARRATIVE: ${e.narrative.slice(0,300)}\nINTEREST: ${e.interest.slice(0,300)}\nMO: ${e.mo.slice(0,300)}`
   ).join('\n---\n');
 
-  const prompt = `You are an expert analyst in geopolitical influence operations and media manipulation. Your job is to analyze a social media post and determine how closely it aligns with known entities' public narratives, hidden interests, and modus operandi.
+  const prompt = `You are a senior analyst specializing in geopolitical influence operations, information warfare, and social media manipulation. Your task is to determine whether a social media post was likely created or amplified as part of a deliberate manipulation effort serving a known entity's agenda.
+
+CORE PHILOSOPHY:
+The primary signal of manipulation is not that a post echoes an entity's public talking points — ordinary people can agree with those innocently. The real signal is whether the post serves an entity's HIDDEN INTEREST (their strategic agenda they don't publicly admit) and whether it was constructed using that entity's known MODUS OPERANDI (their manipulation playbook). Public narrative alignment alone is weak evidence. Hidden interest + MO alignment together is strong evidence of deliberate, coordinated origin.
 
 SOCIAL MEDIA POST TEXT:
 "${postText}"
@@ -534,23 +549,38 @@ SOCIAL MEDIA POST TEXT:
 ENTITY DATABASE:
 ${entitySummaries}
 
-INSTRUCTIONS:
-For each entity, score how well the post aligns with:
-1. narrative_score (0-100): Does the post's language, framing, and claims match this entity's PUBLIC narrative?
-2. interest_score (0-100): Does posting this content serve this entity's HIDDEN INTERESTS?
-3. mo_score (0-100): Does the post use tactics or patterns consistent with this entity's MODUS OPERANDI?
+SCORING INSTRUCTIONS:
+For each entity, independently assess three dimensions:
 
-Compute a combined_score = (narrative_score * 0.30) + (interest_score * 0.40) + (mo_score * 0.30)
+1. interest_score (0-100) — MOST IMPORTANT (weight: 55%)
+   Ask: "Would spreading this post advance this entity's HIDDEN strategic interest — the agenda they don't publicly admit?"
+   High score = the post materially benefits their covert goals (destabilization, blocking normalization, undermining rivals, etc.)
+   Low score = the post is neutral or irrelevant to their hidden agenda
+   IMPORTANT: Score this independent of whether the entity publicly claims to support the cause. A post can serve Iran's interest in destabilizing Israel even if Iran publicly denies involvement.
 
-Only include entities where combined_score >= 85.
+2. mo_score (0-100) — IMPORTANT (weight: 35%)
+   Ask: "Does the construction of this post — its framing, vocabulary, emotional triggers, selective omissions, rhetorical structure — match this entity's known manipulation playbook?"
+   High score = post uses documented tactics of this entity (e.g. martyrdom glorification for Hamas, anti-normalization framing for Iran, delegitimization of international law for certain state actors)
+   Low score = post construction doesn't resemble this entity's known methods
 
-For each qualifying entity, provide a one-sentence "why" explanation citing specific phrases or patterns from the post.
+3. narrative_score (0-100) — WEAK SIGNAL (weight: 10%)
+   Ask: "Does the post's surface content echo this entity's official public statements?"
+   NOTE: Weight this very lightly. Anyone can parrot a public narrative innocently. Only meaningful if interest and MO scores are also high.
 
-Also provide:
-- text_ai_score (1-10): How likely is this text AI-generated? Consider: uniform sentence structure, lack of typos/personal voice, repetitive rhetorical patterns, unnatural fluency.
-- text_ai_reason: One sentence explaining the text AI score.
+Compute: combined_score = (interest_score * 0.55) + (mo_score * 0.35) + (narrative_score * 0.10)
 
-Respond ONLY with valid JSON in this exact format, no preamble, no markdown:
+Only return entities where combined_score >= 85.
+
+For each qualifying entity, write a "why" explanation (2-3 sentences) that:
+- Cites specific phrases or structural patterns from the post
+- Explains which hidden interest is served and how
+- Notes which MO tactics are present
+
+Also assess the post text itself:
+- text_ai_score (1-10): Probability the text was AI-generated. Consider: uniform sentence structure, absence of typos or personal voice, repetitive rhetorical cadence, unnaturally polished political framing, absence of hesitation or personal anecdote.
+- text_ai_reason: One sentence of evidence for the score.
+
+Respond ONLY with valid JSON, no preamble, no markdown fences:
 {
   "text_ai_score": 5,
   "text_ai_reason": "...",
@@ -604,9 +634,9 @@ const DEMOS = {
     textNote:"High AI probability: unusually uniform sentence structure, no typos or colloquialisms, repetitive rhetorical pattern ('the resistance will not...'), lacks any personal voice. Vocabulary consistent with LLM output trained on political commentary.",
     imgNote:"Image shows bombing aftermath with suspiciously perfect composition. Reverse-image search yields no original source. Lighting artifacts near building edges suggest AI generation. Metadata stripped.",
     matches:[
-      {name:"Hamas",pct:96,narrative:95,interest:94,mo:98,why:"Text frames attack as 'legitimate resistance,' denies civilian targeting — exact language from Hamas official communiqués. 'The land will return' matches Hamas charter language."},
-      {name:"Iran",pct:89,narrative:82,interest:91,mo:94,why:"Anti-normalization framing and 'Zionist occupation' vocabulary match Iran's strategic messaging. Timing consistent with IRGC media cycles identified in previous influence operations."},
-      {name:"Hezbollah",pct:86,narrative:88,interest:85,mo:84,why:"Solidarity framing and martyrdom glorification aligns with Hezbollah's public narrative. Language mirrors Al-Manar outlet phrasing."}
+      {name:"Hamas",pct:96,narrative:95,interest:97,mo:96,why:"'The land will return to its rightful owners' and martyrdom glorification directly serve Hamas's core interest of maintaining armed resistance legitimacy and preventing any political settlement. The post uses Hamas's documented MO of framing all violence as defensive resistance while delegitimizing normalization as betrayal."},
+      {name:"Iran",pct:91,narrative:82,interest:94,mo:93,why:"'Normalization is betrayal' is the exact strategic message Iran needs spread to derail Saudi-Israeli talks — directly serving Iran's hidden interest of blocking regional realignment. The post deploys Iran's MO of using proxy-friendly language to advance the Axis of Resistance agenda without attribution."},
+      {name:"Hezbollah",pct:87,narrative:88,interest:86,mo:88,why:"Martyrdom glorification and resistance framing serve Hezbollah's interest in sustaining a multi-front pressure strategy on Israel. The rhetorical structure mirrors documented Hezbollah media output, particularly the Al-Manar vocabulary of sacred resistance."}
     ],
     created:"October 2023",platforms:"X only",website:"None found",real:"Unverifiable",
     flags:[
@@ -625,8 +655,8 @@ const DEMOS = {
     textNote:"Moderate AI probability: mixed signals — some personal anecdotes seeded for authenticity but underlying narrative structure and keyword density around 'Zionist entity' and 'Axis of Resistance' follow documented Iranian influence op templates identified by Stanford Internet Observatory.",
     imgNote:"",
     matches:[
-      {name:"Iran",pct:93,narrative:88,interest:95,mo:96,why:"Post promotes the 'Axis of Resistance' framing and questions Arab normalization — core Iranian strategic messaging. Anti-normalization language is a hallmark of IRGC-linked content operations."},
-      {name:"Turkey",pct:87,narrative:90,interest:84,mo:87,why:"Anti-normalization and pro-Palestinian statehood framing aligns with Erdoğan's domestic political messaging. Shares rhetorical similarity with AKP media outlets."}
+      {name:"Iran",pct:94,narrative:88,interest:96,mo:94,why:"'The Axis of Resistance is the only honest response' and anti-normalization framing directly serve Iran's hidden interest of blocking Saudi-Israeli realignment and sustaining proxy network legitimacy. The post uses Iran's documented MO of laundering strategic messaging through ostensibly independent regional voices."},
+      {name:"Turkey",pct:86,narrative:90,interest:84,mo:85,why:"Anti-normalization content serves Erdoğan's hidden interest of positioning Turkey as the authentic Muslim-world leader, undercutting Gulf states' legitimacy. The rhetorical structure — moral accusation followed by a resistance alternative — mirrors AKP media playbook."}
     ],
     created:"March 2022",platforms:"Facebook + Instagram (@MiddleEastTruth)",website:"middleeasttruth.net — registered 2022, privacy-protected WHOIS",real:"Unclear — 'Editor: Ali Hassan' cited but no verifiable record",
     flags:[
@@ -836,7 +866,7 @@ function showResults(url, d) {
           <span class="match-pct" style="color:${scoreColor(m.pct)}">${m.pct}%</span>
         </div>
         <div class="match-bars">
-          ${[['Public narrative',m.narrative],['Interest / agenda',m.interest],['Modus operandi',m.mo]].map(([l,v]) => `
+          ${[['Public narrative (10%)',m.narrative],['Hidden interest (55%)',m.interest],['Modus operandi (35%)',m.mo]].map(([l,v]) => `
             <div class="mini-bar-row">
               <span class="mini-label">${l}</span>
               <div class="mini-wrap"><div class="mini-fill" style="width:${v}%;background:${scoreColor(v)}"></div></div>
