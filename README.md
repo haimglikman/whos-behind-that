@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.5
+- Auto-clear analyze tab when navigating away — URL and results reset automatically
+- Removed demo scenario buttons from analyze tab
+  
 ### v1.4
 - Clickable history: every Post History entry opens the full analysis view
 - Reframed from "manipulation detection" to "narrative alignment" — whose agenda does this serve?
