@@ -369,16 +369,25 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           <h2>Changelog</h2>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.5</div>
-            <div class="changelog-date">Current version</div>
+            <div class="changelog-ver">v1.5.1</div>
+            <div class="changelog-date">Current version — bug fix</div>
             <ul>
-              <li><strong>Auto-clear analyze tab:</strong> URL field and results are automatically cleared when navigating away — post history tab already keeps the full record.</li>
+              <li><strong>Fixed undefined% bug:</strong> Alignment score showed "undefined%" when server response did not include a pre-computed <code>pct</code> field. Score is now recomputed client-side from raw interest/MO/narrative scores as a reliable fallback.</li>
+              <li><strong>Added NaN guard:</strong> <code>showResults</code> now safely defaults to 0 if score is missing or malformed, preventing rendering errors.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v1.5.0</div>
+            <div class="changelog-date">Previous version</div>
+            <ul>
+              <li><strong>Auto-clear analyze tab:</strong> URL field and results are automatically cleared when navigating away.</li>
               <li><strong>Removed demo chips:</strong> Cleaned up the analyze tab by removing the demo scenario buttons.</li>
             </ul>
           </div>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.4</div>
+            <div class="changelog-ver">v1.4.0</div>
             <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>Clickable history:</strong> Every entry in Post History is now clickable — opens the full analysis view in the Analyze tab exactly as it appeared when first run.</li>
@@ -391,7 +400,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           </div>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.3</div>
+            <div class="changelog-ver">v1.3.0</div>
             <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>Proxy server:</strong> Post text is now fetched automatically from X, Facebook, and Instagram — no more manual copy-pasting. Requires deploying the companion <code>whos-behind-that-server</code> to Render.</li>
@@ -403,7 +412,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           </div>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.2</div>
+            <div class="changelog-ver">v1.2.0</div>
             <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>Reweighted scoring engine:</strong> Combined score now weights hidden interest at 55%, modus operandi at 35%, and public narrative at only 10% — reflecting that manipulation is primarily detected through <em>who benefits</em> and <em>how it was constructed</em>, not just what it says.</li>
@@ -415,7 +424,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           </div>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.1</div>
+            <div class="changelog-ver">v1.1.0</div>
             <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>AI scoring engine:</strong> Narrative matching now uses Claude AI (claude-sonnet) to semantically score post text against each entity's public narrative, interest, and modus operandi — replacing static hardcoded scores.</li>
@@ -428,7 +437,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           </div>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.0</div>
+            <div class="changelog-ver">v1.0.0</div>
             <div class="changelog-date">Initial release</div>
             <ul>
               <li>Core app structure with analyze, database, and about tabs.</li>
@@ -467,7 +476,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.5.1';
 // ── Point this at your Render server URL after deploying
 // e.g. 'https://whos-behind-that-server.onrender.com'
 const SERVER_URL = localStorage.getItem('wbt_server_url') || '';
@@ -798,7 +807,14 @@ async function performServerAnalysis(url, serverUrl) {
 }
 
 function buildResult(analysis, post, serverUrl, entities) {
-  const matches = (analysis.matches || []).sort((a,b) => b.pct - a.pct);
+  const rawMatches = (analysis.matches || []).map(m => ({
+    ...m,
+    // Recompute pct client-side as fallback in case server omits it or it's undefined
+    pct: typeof m.pct === 'number' && !isNaN(m.pct)
+      ? m.pct
+      : Math.round(((m.interest||0) * 0.55) + ((m.mo||0) * 0.35) + ((m.narrative||0) * 0.10))
+  })).sort((a,b) => b.pct - a.pct);
+  const matches = rawMatches.filter(m => m.pct >= 85);
   const topMatch = matches.length > 0 ? matches[0].pct : 0;
   const topName = matches.length > 0 ? matches[0].name : null;
   const topNames = matches.slice(0,2).map(m=>m.name).join(' / ');
@@ -860,7 +876,7 @@ function showResults(url, d) {
   document.getElementById('result-url-label').textContent = url;
   currentResult = { url, ...d };
 
-  const pct = d.overall.score;
+  const pct = (typeof d.overall.score === 'number' && !isNaN(d.overall.score)) ? d.overall.score : 0;
   const color = alignmentColor(pct);
   const circle = document.getElementById('dial-circle');
   circle.style.strokeDashoffset = 201 - (201 * pct / 100);
