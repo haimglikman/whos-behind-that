@@ -1,5 +1,11 @@
 ## Changelog
 
+### v1.6.0
+- Actor profiles: Claude researches social media actors via OSINT, cached by handle
+- Actors tab: browse, view, and delete all profiled actors
+- Entity database expanded from 20 to 50 entities
+- Media outlets (Al Jazeera, Al-Manar, Press TV) captured as MO instruments of patron entities
+
 ### v1.5.1 — bug fix
 - Fixed undefined% alignment score when server response omits pre-computed pct field
 - Added NaN guard in showResults to prevent rendering errors on malformed scores
