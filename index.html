@@ -193,7 +193,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.6.1</div>
+      <div class="version-badge" id="version-badge">v1.6.2</div>
     </div>
     <div class="nav-section">
       <div class="nav-label">Tools</div>
@@ -533,17 +533,6 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 <div class="toast" id="toast"></div>
 
 <script>
-// ─────────────────────────────────────────────
-// VERSION
-// ─────────────────────────────────────────────
-const APP_VERSION = '1.6.1';
-// ── Point this at your Render server URL after deploying
-// e.g. 'https://whos-behind-that-server.onrender.com'
-const SERVER_URL = localStorage.getItem('wbt_server_url') || '';
-
-// ─────────────────────────────────────────────
-// DEFAULT ENTITY DATABASE
-// ─────────────────────────────────────────────
 const DEFAULT_ENTITIES = [
   // ── NATION STATES ──
   { id:1, name:"Israel (Netanyahu government)", type:"Nation state", narrative:"Israel is exercising its inherent right to self-defense following the October 7, 2023 Hamas terrorist attack. Goals: eliminate Hamas military and governing capabilities, secure return of all hostages, and prevent Gaza from being used as a future base for attacks. Israel maintains it targets Hamas infrastructure, not civilians.", interest:"Permanently dismantling Hamas as a military force, preventing Iranian regional hegemony, maintaining military superiority, and—for Netanyahu's coalition—avoiding political collapse and delaying accountability for October 7 intelligence failures.", mo:"Sustained air and ground campaign in Gaza; economic blockade; targeted assassinations of Hamas/Hezbollah leadership; pager/walkie-talkie attacks on Hezbollah; diplomatic pressure to block ICC/ICJ proceedings; leveraging U.S. military aid.", comments:"Netanyahu faces ICC arrest warrant. Far-right coalition partners (Ben Gvir, Smotrich) push for annexation and oppose any two-state solution." },
@@ -613,6 +602,11 @@ const DEFAULT_ENTITIES = [
 ];
 
 // ─────────────────────────────────────────────
+// VERSION
+// ─────────────────────────────────────────────
+const APP_VERSION = '1.6.2';
+
+// ─────────────────────────────────────────────
 // STORAGE
 // ─────────────────────────────────────────────
 function getEntities() {
@@ -633,8 +627,7 @@ function getServerUrl() { return localStorage.getItem('wbt_server_url') || ''; }
 function getActors() { try { return JSON.parse(localStorage.getItem('wbt_actors') || '{}'); } catch(e) { return {}; } }
 function saveActors(a) { localStorage.setItem('wbt_actors', JSON.stringify(a)); updateActorsCount(); }
 function updateActorsCount() {
-  const a = getActors();
-  document.getElementById('actors-count').textContent = Object.keys(a).length;
+  document.getElementById('actors-count').textContent = Object.keys(getActors()).length;
 }
 function actorKey(handle) { return (handle||'').toLowerCase().replace(/[@\s]/g,''); }
 
@@ -659,15 +652,14 @@ function updateServerBar(url) {
   }
 }
 function updateHistoryCount() {
-  const h = getHistory();
-  document.getElementById('history-count').textContent = h.length;
+  document.getElementById('history-count').textContent = getHistory().length;
 }
 function updateScanCounter() {
   const s = getScanStats();
   document.getElementById('scan-total').textContent = s.total || 0;
   if (s.last) {
     const d = new Date(s.last);
-    document.getElementById('scan-last').textContent = 'Last: ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('scan-last').textContent = 'Last: ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }
 }
 
@@ -681,7 +673,7 @@ function showPage(name, el) {
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
   if (el) el.classList.add('active');
   if (name === 'database') renderDB();
   if (name === 'history') renderHistory();
@@ -701,13 +693,11 @@ function toast(msg) {
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
-// Alignment intensity color — cool→warm spectrum, no danger framing
-// 0–30: muted blue-grey | 31–60: blue-purple | 61–80: amber-orange | 81–100: deep red-orange
 function alignmentColor(pct) {
-  if (pct >= 81) return '#e8603c';       // deep red-orange — very strong alignment
-  if (pct >= 61) return '#e8a23c';       // amber-orange — strong alignment
-  if (pct >= 31) return '#7b6fe8';       // blue-purple — moderate alignment
-  return '#4a7abf';                       // muted blue — weak / coincidental
+  if (pct >= 81) return '#e8603c';
+  if (pct >= 61) return '#e8a23c';
+  if (pct >= 31) return '#7b6fe8';
+  return '#4a7abf';
 }
 function alignmentBg(pct) {
   if (pct >= 81) return 'rgba(232,96,60,0.12)';
@@ -716,47 +706,177 @@ function alignmentBg(pct) {
   return 'rgba(74,122,191,0.10)';
 }
 function pillClass(type) {
-  return { 'Nation state':'pill-nation','Terror organization':'pill-terror','Militia':'pill-militia','Politician':'pill-politician',"Int'l organization":'pill-org' }[type] || 'pill-org';
+  const map = {'Nation state':'pill-nation','Terror organization':'pill-terror','Militia':'pill-militia','Politician':'pill-politician',"Int'l organization":'pill-org'};
+  return map[type] || 'pill-org';
 }
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 function extractHandle(url) {
-  // X/Twitter: x.com/handle/status/... or twitter.com/handle/status/...
-  let m = url.match(/(?:x\.com|twitter\.com)\/([^\/\?]+)(?:\/status\/)?/i);
+  let m = url.match(/(?:x\.com|twitter\.com)\/([^\/\?]+)/i);
   if (m && m[1] && !['i','home','search','explore'].includes(m[1])) return m[1];
-  // Instagram: instagram.com/handle/p/...
   m = url.match(/instagram\.com\/([^\/\?]+)/i);
   if (m && m[1] && !['p','reel','stories','explore'].includes(m[1])) return m[1];
-  // Facebook: facebook.com/handle/posts/... or facebook.com/profile.php?id=...
-  m = url.match(/facebook\.com\/([^\/\?]+)(?:\/posts\/)?/i);
+  m = url.match(/facebook\.com\/([^\/\?]+)/i);
   if (m && m[1] && !['photo','video','groups','pages','events','profile.php'].includes(m[1])) return m[1];
   return null;
 }
 
-// Claude scoring now handled server-side — see server.js
+// ─────────────────────────────────────────────
+// ANALYZE
+// ─────────────────────────────────────────────
+const LOAD_STEPS = [
+  'Fetching post content...',
+  'Running AI text detection...',
+  'Analyzing image...',
+  'Scoring narrative against entity database (Claude AI)...',
+  'Running account background check...',
+  'Compiling results...'
+];
+
+let currentResult = null;
+
+function resetAnalysis() {
+  document.getElementById('loader').classList.remove('active');
+  document.getElementById('results').classList.remove('active');
+  document.getElementById('url-input').value = '';
+  const pt = document.getElementById('post-text');
+  if (pt) pt.value = '';
+  document.getElementById('manual-text-fallback').style.display = 'none';
+  document.getElementById('actor-prompt').style.display = 'none';
+  document.getElementById('actor-result-card').style.display = 'none';
+}
+
+function showLoader() {
+  document.getElementById('results').classList.remove('active');
+  document.getElementById('loader').classList.add('active');
+  document.getElementById('loader-steps').innerHTML = LOAD_STEPS.map((s,i) =>
+    '<div class="loader-step' + (i===0?' active':'') + '">' + s + '</div>'
+  ).join('');
+}
+
+async function startAnalysis() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) { toast('Please enter a URL.'); return; }
+  const serverUrl = getServerUrl();
+  if (!serverUrl) { toast('Please enter your server URL first.'); document.getElementById('server-url-input').focus(); return; }
+  showLoader();
+  try {
+    await performServerAnalysis(url, serverUrl);
+  } catch(e) {
+    document.getElementById('loader').classList.remove('active');
+    document.getElementById('manual-text-fallback').style.display = 'block';
+    toast('Could not fetch post automatically: ' + e.message);
+  }
+}
+
+async function analyzeWithManualText() {
+  const url = document.getElementById('url-input').value.trim();
+  const postText = document.getElementById('post-text').value.trim();
+  if (!postText) { toast('Please paste the post text.'); return; }
+  const serverUrl = getServerUrl();
+  if (!serverUrl) { toast('Please enter your server URL first.'); return; }
+  showLoader();
+  document.getElementById('manual-text-fallback').style.display = 'none';
+  try {
+    const entities = getEntities();
+    const steps = document.getElementById('loader-steps').querySelectorAll('.loader-step');
+    const advance = function(i) {
+      if (steps[i]) { steps[i].classList.remove('active'); steps[i].classList.add('done'); steps[i].textContent = '✓ ' + LOAD_STEPS[i]; }
+      if (steps[i+1]) steps[i+1].classList.add('active');
+    };
+    advance(0); await delay(300); advance(1); await delay(300);
+    advance(2); if (steps[3]) steps[3].classList.add('active');
+    const res = await fetch(serverUrl + '/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url, postText, entities})
+    });
+    if (!res.ok) { const e = await res.json().catch(function(){return {};}); throw new Error(e.error || 'Server error ' + res.status); }
+    const analysis = await res.json();
+    advance(3); await delay(300); advance(4); await delay(300); advance(5); await delay(200);
+    const result = buildResult(analysis, {text: postText}, entities);
+    showResults(url, result);
+    saveToHistory(url, postText, result);
+    recordScan();
+  } catch(e) {
+    document.getElementById('loader').classList.remove('active');
+    document.getElementById('manual-text-fallback').style.display = 'block';
+    toast('Analysis error: ' + e.message);
+  }
+}
+
+async function performServerAnalysis(url, serverUrl) {
+  const entities = getEntities();
+  const steps = document.getElementById('loader-steps').querySelectorAll('.loader-step');
+  const advance = function(i) {
+    if (steps[i]) { steps[i].classList.remove('active'); steps[i].classList.add('done'); steps[i].textContent = '✓ ' + LOAD_STEPS[i]; }
+    if (steps[i+1]) steps[i+1].classList.add('active');
+  };
+  advance(0); if (steps[1]) steps[1].classList.add('active');
+  const res = await fetch(serverUrl + '/fetch-and-analyze', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({url, entities})
+  });
+  if (!res.ok) { const e = await res.json().catch(function(){return {};}); throw new Error(e.error || 'Server error ' + res.status); }
+  advance(1); await delay(250); advance(2); await delay(250);
+  advance(3); await delay(250); advance(4); await delay(250); advance(5); await delay(200);
+  const data = await res.json();
+  const result = buildResult(data.analysis, data.post, entities);
+  showResults(url, result);
+  saveToHistory(url, (data.post && data.post.text) || '', result);
+  recordScan();
+}
+
+function buildResult(analysis, post, entities) {
+  const rawMatches = (analysis.matches || []).map(function(m) {
+    return Object.assign({}, m, {
+      pct: (typeof m.pct === 'number' && !isNaN(m.pct))
+        ? m.pct
+        : Math.round(((m.interest||0)*0.55) + ((m.mo||0)*0.35) + ((m.narrative||0)*0.10))
+    });
+  }).sort(function(a,b){ return b.pct - a.pct; });
+  const matches = rawMatches.filter(function(m){ return m.pct >= 85; });
+  const topMatch = matches.length > 0 ? matches[0].pct : 0;
+  const topName = matches.length > 0 ? matches[0].name : null;
+  const topNames = matches.slice(0,2).map(function(m){ return m.name; }).join(' / ');
+  return {
+    textAI: analysis.text_ai_score || 5,
+    textNote: analysis.text_ai_reason || '',
+    hasImage: false, imgAI: null, imgNote: 'Image analysis coming in a future version.',
+    matches: matches,
+    created: (post && post.author) ? 'Account: @' + (post.authorHandle || post.author) : 'Requires manual lookup',
+    platforms: (post && post.source) ? 'Fetched via ' + post.source : 'Requires manual lookup',
+    website: 'Requires manual lookup',
+    real: 'Requires manual lookup',
+    flags: [{color:'var(--amber)', text:'Full account analysis (creation date, cross-platform presence, WHOIS) coming in a future version.'}],
+    overall: {
+      score: topMatch,
+      label: topNames || 'No strong alignment detected',
+      desc: matches.length > 0
+        ? 'Claude AI found ' + matches.length + ' entity match' + (matches.length>1?'es':'') + ' above 85% threshold across ' + entities.length + ' entities. Strongest alignment: ' + topName + ' at ' + topMatch + '%.'
+        : 'Claude AI found no entity alignment above 85% across ' + entities.length + ' entities. Post does not strongly serve any tracked entity\'s agenda.'
+    }
+  };
+}
 
 function showResults(url, d) {
   document.getElementById('loader').classList.remove('active');
   document.getElementById('results').classList.add('active');
   document.getElementById('result-url-label').textContent = url;
-  currentResult = { url, ...d };
+  currentResult = Object.assign({url: url}, d);
 
-  // Hide actor prompt and result card initially
   document.getElementById('actor-prompt').style.display = 'none';
   document.getElementById('actor-result-card').style.display = 'none';
 
-  // Extract handle from URL and check if actor is already known
   const handle = extractHandle(url);
   if (handle) {
     const actors = getActors();
     const key = actorKey(handle);
     if (actors[key]) {
-      // Actor already known — show their card immediately
-      const card = document.getElementById('actor-result-card');
-      card.style.display = 'block';
+      document.getElementById('actor-result-card').style.display = 'block';
       renderActorCard(document.getElementById('actor-result-body'), actors[key]);
     } else {
-      // Actor unknown — prompt user
       showActorPrompt(handle, url);
     }
   }
@@ -771,7 +891,6 @@ function showResults(url, d) {
   document.getElementById('r-overall-label').textContent = d.overall.label;
   document.getElementById('r-overall-desc').textContent = d.overall.desc;
 
-  // Text AI
   const tPct = d.textAI * 10;
   document.getElementById('r-text-bar').style.width = tPct + '%';
   document.getElementById('r-text-bar').style.background = alignmentColor(tPct);
@@ -779,7 +898,6 @@ function showResults(url, d) {
   document.getElementById('r-text-val').style.color = alignmentColor(tPct);
   document.getElementById('r-text-note').textContent = d.textNote;
 
-  // Image
   if (d.hasImage && d.imgAI !== null) {
     document.getElementById('img-present').style.display = 'block';
     document.getElementById('img-absent').style.display = 'none';
@@ -795,35 +913,33 @@ function showResults(url, d) {
     document.getElementById('img-absent').textContent = d.imgNote || 'No image detected in this post.';
   }
 
-  // Entity matches
   const matchEl = document.getElementById('r-matches');
   if (!d.matches || d.matches.length === 0) {
     matchEl.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No entity alignment above 85% threshold. Post does not strongly serve any tracked entity\'s agenda.</div>';
   } else {
-    matchEl.innerHTML = d.matches.map(m => {
+    matchEl.innerHTML = d.matches.map(function(m) {
       const c = alignmentColor(m.pct);
       const bg = alignmentBg(m.pct);
-      return `
-      <div class="match-item" style="border-color:${c}22">
-        <div class="match-top">
-          <span class="match-name">${m.name}</span>
-          <span class="match-pct" style="color:${c}">${m.pct}%</span>
-        </div>
-        <div class="match-bars">
-          ${[['Public narrative (10%)',m.narrative],['Hidden interest (55%)',m.interest],['Modus operandi (35%)',m.mo]].map(([l,v]) => `
-            <div class="mini-bar-row">
-              <span class="mini-label">${l}</span>
-              <div class="mini-wrap"><div class="mini-fill" style="width:${v}%;background:${alignmentColor(v)}"></div></div>
-              <span class="mini-val">${v}%</span>
-            </div>`).join('')}
-        </div>
-        <div class="match-why" style="margin-bottom:8px">${m.why}</div>
-        ${m.missing ? `
-        <div style="background:${bg};border-radius:var(--radius-sm);padding:8px 10px;border-left:2px solid ${c}">
-          <div style="font-size:9px;font-weight:600;color:${c};text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">What this post leaves out</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.55">${m.missing}</div>
-        </div>` : ''}
-      </div>`;
+      return '<div class="match-item" style="border-color:' + c + '22">' +
+        '<div class="match-top">' +
+          '<span class="match-name">' + escHtml(m.name) + '</span>' +
+          '<span class="match-pct" style="color:' + c + '">' + m.pct + '%</span>' +
+        '</div>' +
+        '<div class="match-bars">' +
+          [['Public narrative (10%)', m.narrative], ['Hidden interest (55%)', m.interest], ['Modus operandi (35%)', m.mo]].map(function(pair) {
+            return '<div class="mini-bar-row">' +
+              '<span class="mini-label">' + pair[0] + '</span>' +
+              '<div class="mini-wrap"><div class="mini-fill" style="width:' + pair[1] + '%;background:' + alignmentColor(pair[1]) + '"></div></div>' +
+              '<span class="mini-val">' + pair[1] + '%</span>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+        '<div class="match-why" style="margin-bottom:8px">' + escHtml(m.why||'') + '</div>' +
+        (m.missing ? '<div style="background:' + bg + ';border-radius:var(--radius-sm);padding:8px 10px;border-left:2px solid ' + c + '">' +
+          '<div style="font-size:9px;font-weight:600;color:' + c + ';text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">What this post leaves out</div>' +
+          '<div style="font-size:11px;color:var(--text2);line-height:1.55">' + escHtml(m.missing) + '</div>' +
+        '</div>' : '') +
+      '</div>';
     }).join('');
   }
 
@@ -831,9 +947,9 @@ function showResults(url, d) {
   document.getElementById('r-platforms').textContent = d.platforms;
   document.getElementById('r-website').textContent = d.website;
   document.getElementById('r-real').textContent = d.real;
-  document.getElementById('r-flags').innerHTML = (d.flags||[]).map(f =>
-    `<div class="flag-item"><div class="flag-dot" style="background:${f.color}"></div><span>${f.text}</span></div>`
-  ).join('');
+  document.getElementById('r-flags').innerHTML = (d.flags||[]).map(function(f) {
+    return '<div class="flag-item"><div class="flag-dot" style="background:' + f.color + '"></div><span>' + escHtml(f.text) + '</span></div>';
+  }).join('');
 }
 
 // ─────────────────────────────────────────────
@@ -844,14 +960,13 @@ function saveToHistory(url, postText, result) {
   const entry = {
     id: Date.now(),
     ts: new Date().toISOString(),
-    url,
+    url: url,
     postText: (postText||'').slice(0, 500),
     overallScore: result.overall.score,
     overallLabel: result.overall.label,
-    topMatches: (result.matches||[]).slice(0,3).map(m => m.name),
+    topMatches: (result.matches||[]).slice(0,3).map(function(m){ return m.name; }),
     textAI: result.textAI,
     hasImage: result.hasImage,
-    // Store full result for clickable replay
     fullResult: result
   };
   h.unshift(entry);
@@ -861,11 +976,10 @@ function saveToHistory(url, postText, result) {
 
 function openHistoryEntry(id) {
   const h = getHistory();
-  const entry = h.find(e => e.id === id);
+  const entry = h.find(function(e){ return e.id === id; });
   if (!entry || !entry.fullResult) { toast('Full result not available for this entry.'); return; }
-  // Switch to analyze tab and show the result
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
   document.getElementById('page-analyze').classList.add('active');
   document.getElementById('nav-analyze').classList.add('active');
   document.getElementById('url-input').value = entry.url;
@@ -880,29 +994,28 @@ function renderHistory() {
     list.innerHTML = '<div class="no-history">No scans yet. Analyze a post to see it here.</div>';
     return;
   }
-  list.innerHTML = h.map(e => {
+  list.innerHTML = h.map(function(e) {
     const d = new Date(e.ts);
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const color = alignmentColor(e.overallScore);
     const hasFullResult = !!e.fullResult;
-    return `
-      <div class="history-item" onclick="openHistoryEntry(${e.id})" style="cursor:pointer" title="${hasFullResult ? 'Click to view full analysis' : 'Full result not available'}">
-        <div class="history-top">
-          <span class="history-url">${escHtml(e.url)}</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="history-score" style="color:${color}">${e.overallScore}%</span>
-            ${hasFullResult ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:${color};flex-shrink:0"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
-          </div>
-        </div>
-        <div class="history-time">${dateStr}</div>
-        ${e.postText ? `<div style="font-size:11px;color:var(--text3);margin-top:5px;line-height:1.5">"${escHtml(e.postText.slice(0,140))}${e.postText.length>140?'…':''}"</div>` : ''}
-        <div class="history-tags" style="margin-top:6px">
-          <span class="history-tag" style="color:${color};border-color:${color}33">${e.overallLabel}</span>
-          ${(e.topMatches||[]).map(m => `<span class="history-tag">${m}</span>`).join('')}
-          ${e.hasImage ? '<span class="history-tag">has image</span>' : ''}
-          ${hasFullResult ? `<span class="history-tag" style="margin-left:auto;color:var(--text3)">view details →</span>` : ''}
-        </div>
-      </div>`;
+    return '<div class="history-item" onclick="openHistoryEntry(' + e.id + ')" style="cursor:pointer">' +
+      '<div class="history-top">' +
+        '<span class="history-url">' + escHtml(e.url) + '</span>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span class="history-score" style="color:' + color + '">' + e.overallScore + '%</span>' +
+          (hasFullResult ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:' + color + ';flex-shrink:0"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="history-time">' + dateStr + '</div>' +
+      (e.postText ? '<div style="font-size:11px;color:var(--text3);margin-top:5px;line-height:1.5">"' + escHtml(e.postText.slice(0,140)) + (e.postText.length>140?'…':'') + '"</div>' : '') +
+      '<div class="history-tags" style="margin-top:6px">' +
+        '<span class="history-tag" style="color:' + color + ';border-color:' + color + '33">' + escHtml(e.overallLabel) + '</span>' +
+        (e.topMatches||[]).map(function(m){ return '<span class="history-tag">' + escHtml(m) + '</span>'; }).join('') +
+        (e.hasImage ? '<span class="history-tag">has image</span>' : '') +
+        (hasFullResult ? '<span class="history-tag" style="margin-left:auto;color:var(--text3)">view details →</span>' : '') +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
@@ -920,7 +1033,7 @@ function renderDB() {
   const q = (document.getElementById('db-search').value||'').toLowerCase();
   const f = document.getElementById('db-filter').value;
   const entities = getEntities();
-  const filtered = entities.filter(e => {
+  const filtered = entities.filter(function(e) {
     const matchQ = !q || e.name.toLowerCase().includes(q) || (e.narrative||'').toLowerCase().includes(q) || (e.interest||'').toLowerCase().includes(q) || (e.mo||'').toLowerCase().includes(q);
     const matchF = !f || e.type === f;
     return matchQ && matchF;
@@ -928,42 +1041,45 @@ function renderDB() {
   document.getElementById('db-count-label').textContent = filtered.length + ' of ' + entities.length + ' entities';
   const list = document.getElementById('db-list');
   if (filtered.length === 0) { list.innerHTML = '<div class="no-results">No entities match your search.</div>'; return; }
-  list.innerHTML = filtered.map(e => `
-    <div class="entity-row" id="erow-${e.id}">
-      <div class="entity-head" onclick="toggleEntity(${e.id})">
-        <span class="type-pill ${pillClass(e.type)}">${e.type}</span>
-        <span class="entity-name-col">${e.name}</span>
-        <svg class="chevron" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div class="entity-body">
-        <div class="form-grid" style="margin-bottom:10px">
-          <div class="field-group"><div class="field-label">Name</div><input type="text" class="field-input" id="e-name-${e.id}" value="${escHtml(e.name)}" /></div>
-          <div class="field-group"><div class="field-label">Type</div><select class="field-select" id="e-type-${e.id}">${["Nation state","Terror organization","Militia","Politician","Int'l organization"].map(t=>`<option${t===e.type?' selected':''}>${t}</option>`).join('')}</select></div>
-        </div>
-        <div class="field-group"><div class="field-label">Public narrative</div><textarea class="field-textarea" id="e-narrative-${e.id}">${escHtml(e.narrative)}</textarea></div>
-        <div class="field-group"><div class="field-label">Interest (hidden agenda)</div><textarea class="field-textarea" id="e-interest-${e.id}">${escHtml(e.interest)}</textarea></div>
-        <div class="field-group"><div class="field-label">Modus operandi</div><textarea class="field-textarea" id="e-mo-${e.id}">${escHtml(e.mo)}</textarea></div>
-        <div class="field-group"><div class="field-label">Comments</div><textarea class="field-textarea" id="e-comments-${e.id}" style="min-height:50px">${escHtml(e.comments||'')}</textarea></div>
-        <div class="entity-actions">
-          <button class="btn btn-sm btn-save" onclick="saveEntity(${e.id})">Save changes</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteEntity(${e.id})">Delete</button>
-        </div>
-      </div>
-    </div>`).join('');
+  list.innerHTML = filtered.map(function(e) {
+    return '<div class="entity-row" id="erow-' + e.id + '">' +
+      '<div class="entity-head" onclick="toggleEntity(' + e.id + ')">' +
+        '<span class="type-pill ' + pillClass(e.type) + '">' + escHtml(e.type) + '</span>' +
+        '<span class="entity-name-col">' + escHtml(e.name) + '</span>' +
+        '<svg class="chevron" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</div>' +
+      '<div class="entity-body">' +
+        '<div class="form-grid" style="margin-bottom:10px">' +
+          '<div class="field-group"><div class="field-label">Name</div><input type="text" class="field-input" id="e-name-' + e.id + '" value="' + escHtml(e.name) + '" /></div>' +
+          '<div class="field-group"><div class="field-label">Type</div><select class="field-select" id="e-type-' + e.id + '">' +
+            ["Nation state","Terror organization","Militia","Politician","Int'l organization"].map(function(t){ return '<option' + (t===e.type?' selected':'') + '>' + t + '</option>'; }).join('') +
+          '</select></div>' +
+        '</div>' +
+        '<div class="field-group"><div class="field-label">Public narrative</div><textarea class="field-textarea" id="e-narrative-' + e.id + '">' + escHtml(e.narrative) + '</textarea></div>' +
+        '<div class="field-group"><div class="field-label">Interest (hidden agenda)</div><textarea class="field-textarea" id="e-interest-' + e.id + '">' + escHtml(e.interest) + '</textarea></div>' +
+        '<div class="field-group"><div class="field-label">Modus operandi</div><textarea class="field-textarea" id="e-mo-' + e.id + '">' + escHtml(e.mo) + '</textarea></div>' +
+        '<div class="field-group"><div class="field-label">Comments</div><textarea class="field-textarea" id="e-comments-' + e.id + '" style="min-height:50px">' + escHtml(e.comments||'') + '</textarea></div>' +
+        '<div class="entity-actions">' +
+          '<button class="btn btn-sm btn-save" onclick="saveEntity(' + e.id + ')">Save changes</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="deleteEntity(' + e.id + ')">Delete</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 }
 
-function toggleEntity(id) { document.getElementById('erow-'+id).classList.toggle('open'); }
+function toggleEntity(id) { document.getElementById('erow-' + id).classList.toggle('open'); }
 
 function saveEntity(id) {
   const entities = getEntities();
-  const idx = entities.findIndex(e => e.id === id);
+  const idx = entities.findIndex(function(e){ return e.id === id; });
   if (idx < 0) return;
-  entities[idx].name = document.getElementById('e-name-'+id).value.trim();
-  entities[idx].type = document.getElementById('e-type-'+id).value;
-  entities[idx].narrative = document.getElementById('e-narrative-'+id).value.trim();
-  entities[idx].interest = document.getElementById('e-interest-'+id).value.trim();
-  entities[idx].mo = document.getElementById('e-mo-'+id).value.trim();
-  entities[idx].comments = document.getElementById('e-comments-'+id).value.trim();
+  entities[idx].name = document.getElementById('e-name-' + id).value.trim();
+  entities[idx].type = document.getElementById('e-type-' + id).value;
+  entities[idx].narrative = document.getElementById('e-narrative-' + id).value.trim();
+  entities[idx].interest = document.getElementById('e-interest-' + id).value.trim();
+  entities[idx].mo = document.getElementById('e-mo-' + id).value.trim();
+  entities[idx].comments = document.getElementById('e-comments-' + id).value.trim();
   saveEntities(entities);
   renderDB();
   toast('Entity saved.');
@@ -971,7 +1087,7 @@ function saveEntity(id) {
 
 function deleteEntity(id) {
   if (!confirm('Delete this entity?')) return;
-  saveEntities(getEntities().filter(e => e.id !== id));
+  saveEntities(getEntities().filter(function(e){ return e.id !== id; }));
   renderDB();
   toast('Entity deleted.');
 }
@@ -982,10 +1098,18 @@ function addEntity() {
   const name = document.getElementById('new-name').value.trim();
   if (!name) { toast('Please enter a name.'); return; }
   const entities = getEntities();
-  const newId = Math.max(...entities.map(e => e.id), 0) + 1;
-  entities.push({ id:newId, name, type:document.getElementById('new-type').value, narrative:document.getElementById('new-narrative').value.trim(), interest:document.getElementById('new-interest').value.trim(), mo:document.getElementById('new-mo').value.trim(), comments:document.getElementById('new-comments').value.trim() });
+  const newId = Math.max.apply(null, entities.map(function(e){ return e.id; }).concat([0])) + 1;
+  entities.push({
+    id: newId,
+    name: name,
+    type: document.getElementById('new-type').value,
+    narrative: document.getElementById('new-narrative').value.trim(),
+    interest: document.getElementById('new-interest').value.trim(),
+    mo: document.getElementById('new-mo').value.trim(),
+    comments: document.getElementById('new-comments').value.trim()
+  });
   saveEntities(entities);
-  ['new-name','new-narrative','new-interest','new-mo','new-comments'].forEach(id => document.getElementById(id).value = '');
+  ['new-name','new-narrative','new-interest','new-mo','new-comments'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('add-form').classList.remove('open');
   renderDB();
   toast('Entity added to database.');
@@ -1000,10 +1124,8 @@ let pendingActorUrl = null;
 function showActorPrompt(handle, url) {
   pendingActorHandle = handle;
   pendingActorUrl = url;
-  const prompt = document.getElementById('actor-prompt');
-  document.getElementById('actor-prompt-text').textContent =
-    `Actor "@${handle}" has not been profiled yet. Would you like to research this account now?`;
-  prompt.style.display = 'block';
+  document.getElementById('actor-prompt-text').textContent = 'Actor "@' + handle + '" has not been profiled yet. Would you like to research this account now?';
+  document.getElementById('actor-prompt').style.display = 'block';
 }
 
 function dismissActorPrompt() {
@@ -1020,48 +1142,39 @@ async function researchActor() {
   const body = document.getElementById('actor-result-body');
   card.style.display = 'block';
   body.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Researching actor — please wait...</div>';
-
   const serverUrl = getServerUrl();
-  if (!serverUrl) {
-    body.innerHTML = '<div style="font-size:12px;color:var(--amber)">Server URL not configured.</div>';
-    return;
-  }
-
+  if (!serverUrl) { body.innerHTML = '<div style="font-size:12px;color:var(--amber)">Server URL not configured.</div>'; return; }
   try {
     const res = await fetch(serverUrl + '/research-actor', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ handle, url: pendingActorUrl })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({handle: handle, url: pendingActorUrl})
     });
-    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || 'Server error'); }
+    if (!res.ok) { const e = await res.json().catch(function(){return {};}); throw new Error(e.error || 'Server error'); }
     const data = await res.json();
     const actor = data.actor;
-
-    // Cache actor
     const actors = getActors();
-    actors[actorKey(handle)] = { ...actor, handle, ts: new Date().toISOString() };
+    actors[actorKey(handle)] = Object.assign({}, actor, {handle: handle, ts: new Date().toISOString()});
     saveActors(actors);
-
     renderActorCard(body, actor);
     toast('Actor profile saved.');
   } catch(e) {
-    body.innerHTML = `<div style="font-size:12px;color:var(--amber)">Could not research actor: ${e.message}</div>`;
+    body.innerHTML = '<div style="font-size:12px;color:var(--amber)">Could not research actor: ' + escHtml(e.message) + '</div>';
   }
   pendingActorHandle = null;
 }
 
 function renderActorCard(container, actor) {
-  container.innerHTML = `
-    <div style="margin-bottom:6px">
-      <div class="actor-name">${escHtml(actor.name || actor.handle || 'Unknown')}</div>
-      ${actor.location ? `<div class="actor-location">📍 ${escHtml(actor.location)}</div>` : ''}
-    </div>
-    <div class="actor-bio">${escHtml(actor.bio || 'No biographical information found.')}</div>
-    ${actor.handles && actor.handles.length > 0 ? `
-      <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Known accounts & websites</div>
-      <div class="actor-handles">${actor.handles.map(h => `<span class="actor-handle-tag">${escHtml(h)}</span>`).join('')}</div>
-    ` : ''}
-  `;
+  container.innerHTML =
+    '<div style="margin-bottom:6px">' +
+      '<div class="actor-name">' + escHtml(actor.name || actor.handle || 'Unknown') + '</div>' +
+      (actor.location ? '<div class="actor-location">📍 ' + escHtml(actor.location) + '</div>' : '') +
+    '</div>' +
+    '<div class="actor-bio">' + escHtml(actor.bio || 'No biographical information found.') + '</div>' +
+    (actor.handles && actor.handles.length > 0 ?
+      '<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;margin-top:8px">Known accounts & websites</div>' +
+      '<div class="actor-handles">' + actor.handles.map(function(h){ return '<span class="actor-handle-tag">' + escHtml(h) + '</span>'; }).join('') + '</div>'
+    : '');
 }
 
 function renderActors() {
@@ -1072,27 +1185,24 @@ function renderActors() {
     list.innerHTML = '<div class="no-actors">No actors profiled yet. Research an actor after analyzing a post.</div>';
     return;
   }
-  list.innerHTML = keys.map(k => {
+  list.innerHTML = keys.map(function(k) {
     const a = actors[k];
     const d = a.ts ? new Date(a.ts) : null;
-    return `
-      <div class="actor-card">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-          <div style="flex:1">
-            <div class="actor-name">${escHtml(a.name || a.handle)}</div>
-            <div class="actor-handle">@${escHtml(a.handle)}</div>
-            ${a.location ? `<div class="actor-location">📍 ${escHtml(a.location)}</div>` : ''}
-            <div class="actor-bio">${escHtml(a.bio || '')}</div>
-            ${a.handles && a.handles.length > 0 ? `
-              <div class="actor-handles" style="margin-top:8px">${a.handles.map(h => `<span class="actor-handle-tag">${escHtml(h)}</span>`).join('')}</div>
-            ` : ''}
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            ${d ? `<div style="font-size:10px;color:var(--text3)">${d.toLocaleDateString()}</div>` : ''}
-            <button class="btn btn-sm btn-danger" style="margin-top:8px" onclick="deleteActor('${k}')">Delete</button>
-          </div>
-        </div>
-      </div>`;
+    return '<div class="actor-card">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">' +
+        '<div style="flex:1">' +
+          '<div class="actor-name">' + escHtml(a.name || a.handle) + '</div>' +
+          '<div class="actor-handle">@' + escHtml(a.handle) + '</div>' +
+          (a.location ? '<div class="actor-location">📍 ' + escHtml(a.location) + '</div>' : '') +
+          '<div class="actor-bio">' + escHtml(a.bio || '') + '</div>' +
+          (a.handles && a.handles.length > 0 ? '<div class="actor-handles" style="margin-top:8px">' + a.handles.map(function(h){ return '<span class="actor-handle-tag">' + escHtml(h) + '</span>'; }).join('') + '</div>' : '') +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0">' +
+          (d ? '<div style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString() + '</div>' : '') +
+          '<button class="btn btn-sm btn-danger" style="margin-top:8px" onclick="deleteActor(\'' + k + '\')">Delete</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
@@ -1114,7 +1224,7 @@ function clearActors() {
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', function() {
   const serverUrl = getServerUrl();
   if (serverUrl) document.getElementById('server-url-input').value = serverUrl;
   updateServerBar(serverUrl);
