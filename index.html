@@ -61,9 +61,6 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .btn-save { border-color: rgba(46,204,113,0.3); color: var(--green); }
 .btn-save:hover { background: var(--green-dim); }
 .demo-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.demo-chip { padding: 4px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 99px; font-size: 11px; color: var(--text2); cursor: pointer; transition: all 0.15s; font-family: var(--sans); }
-.demo-chip:hover { border-color: var(--border2); color: var(--text); }
-.demo-label { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
 .api-bar { background: var(--amber-dim); border: 1px solid rgba(240,165,0,0.2); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .api-bar p { font-size: 12px; color: var(--amber); flex: 1; min-width: 200px; }
 .api-key-input { background: var(--bg3); border: 1px solid rgba(240,165,0,0.3); border-radius: var(--radius-sm); padding: 6px 10px; color: var(--text); font-family: var(--mono); font-size: 11px; outline: none; width: 260px; }
@@ -212,7 +209,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
       <button class="nav-item" id="nav-database" onclick="showPage('database',this)">
         <svg class="nav-icon" viewBox="0 0 15 15" fill="none"><ellipse cx="7.5" cy="4" rx="5.5" ry="2" stroke="currentColor" stroke-width="1.3"/><path d="M2 4v3.5c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V4" stroke="currentColor" stroke-width="1.3"/><path d="M2 7.5V11c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V7.5" stroke="currentColor" stroke-width="1.3"/></svg>
         Entity database
-        <span class="badge-count" id="db-count">20</span>
+        <span class="badge-count" id="db-count">50</span>
       </button>
       <button class="nav-item" id="nav-actors" onclick="showPage('actors',this)">
         <svg class="nav-icon" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="4" r="1.5" fill="currentColor" opacity=".4"/><path d="M11.5 4h1M12 3.5v1" stroke="currentColor" stroke-width=".9" stroke-linecap="round"/></svg>
@@ -400,8 +397,18 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           <h2>Changelog</h2>
 
           <div class="changelog-item">
+            <div class="changelog-ver">v1.6.1</div>
+            <div class="changelog-date">Current version — bug fix</div>
+            <ul>
+              <li><strong>Removed dead code:</strong> Deleted the DEMOS data object (260 lines) and <code>runDemo()</code> function left over from before demos were removed in v1.5.0.</li>
+              <li><strong>Removed orphaned CSS:</strong> Deleted <code>.demo-chip</code> and <code>.demo-label</code> styles that were no longer used.</li>
+              <li><strong>Fixed hardcoded entity count:</strong> Sidebar entity database badge was hardcoded to "20" — now correctly initialised to "50".</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
             <div class="changelog-ver">v1.6.0</div>
-            <div class="changelog-date">Current version</div>
+            <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>Actor profiles:</strong> After each scan, app checks if the actor is already profiled. If not, prompts you to research them. Claude researches the handle using OSINT and returns name, bio, location, and known accounts. Profiles are cached — same actor is never looked up twice.</li>
               <li><strong>Actors tab:</strong> New sidebar tab listing all profiled actors with their bios, locations, and known handles. Profiles can be individually deleted.</li>
@@ -529,7 +536,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 // ── Point this at your Render server URL after deploying
 // e.g. 'https://whos-behind-that-server.onrender.com'
 const SERVER_URL = localStorage.getItem('wbt_server_url') || '';
@@ -747,266 +754,6 @@ function extractHandle(url) {
 }
 
 // Claude scoring now handled server-side — see server.js
-
-// ─────────────────────────────────────────────
-// DEMO DATA
-// ─────────────────────────────────────────────
-const DEMOS = {
-  pro_hamas: {
-    url:"x.com/GazaResistance_Updates/status/1234567890",
-    postText:"The resistance will not be broken. Every martyr strengthens our resolve. The Zionist occupation murders civilians with American weapons while the world watches. Normalization is betrayal. The land will return to its rightful owners. #Gaza #Resistance #FreePalestine",
-    textAI:8, imgAI:7, hasImage:true,
-    textNote:"High AI probability: unusually uniform sentence structure, no typos or colloquialisms, repetitive rhetorical pattern, lacks any personal voice. Vocabulary consistent with LLM output trained on political commentary.",
-    imgNote:"Image shows bombing aftermath with suspiciously perfect composition. Reverse-image search yields no original source. Lighting artifacts near building edges suggest AI generation. Metadata stripped.",
-    matches:[
-      {name:"Hamas",pct:96,narrative:95,interest:97,mo:96,
-       why:"'The land will return to its rightful owners' and martyrdom glorification directly serve Hamas's core interest of maintaining armed resistance legitimacy and preventing any political settlement. Framing all violence as defensive resistance while labeling normalization 'betrayal' mirrors Hamas's documented messaging playbook.",
-       missing:"No mention of Hamas's rejection of the 2000/2008 peace offers, the killing of Fatah officials during the 2007 Gaza takeover, use of civilian infrastructure as military cover, or the deliberate targeting of Israeli civilians on October 7."},
-      {name:"Iran",pct:91,narrative:82,interest:94,mo:93,
-       why:"'Normalization is betrayal' directly serves Iran's hidden interest of blocking Saudi-Israeli realignment. The post deploys Iran's MO of laundering strategic messaging through proxy-friendly language without attribution.",
-       missing:"Omits Iran's own suppression of Palestinian political autonomy when inconvenient, the IRGC's financial control over Hamas and PIJ, and the fact that Iran's opposition to Israel predates any Palestinian cause and stems from domestic regime legitimacy needs."},
-      {name:"Hezbollah",pct:87,narrative:88,interest:86,mo:88,
-       why:"Martyrdom glorification and 'resistance' framing serve Hezbollah's interest in sustaining multi-front pressure on Israel. Rhetorical structure mirrors Al-Manar vocabulary of sacred resistance.",
-       missing:"No mention of Hezbollah's role in the Lebanese economic collapse, its blocking of Lebanese state sovereignty, drug trafficking operations, or the 2020 Beirut port explosion linked to Hezbollah-stored weapons."}
-    ],
-    created:"October 2023",platforms:"X only",website:"None found",real:"Unverifiable",
-    flags:[
-      {color:"var(--red)",text:"Account created 9 days after October 7 — consistent with coordinated inauthentic behavior."},
-      {color:"var(--red)",text:"No profile photo. Generic avatar. Zero personal posts — only conflict-related political content."},
-      {color:"var(--amber)",text:"Follower network is 94% accounts created in the same 30-day window (Oct–Nov 2023)."},
-      {color:"var(--amber)",text:"Posting volume: 40–60 posts/day — atypical for a single human operator."},
-      {color:"var(--amber)",text:"No counterpart accounts found on Facebook or Instagram under this identity."}
-    ],
-    overall:{score:96,label:"Hamas / Iran",desc:"Post strongly serves Hamas and Iranian interests. Frames only one side of a complex conflict while omitting Palestinian leadership failures, Hamas's own violence against Palestinians, and Iran's strategic (non-humanitarian) motives."}
-  },
-  iran_mo: {
-    url:"facebook.com/MiddleEastTruth.Official/posts/987654321",
-    postText:"Why is the West silent? Arab leaders who normalize with the Zionist entity betray Islam and sell out their people for American promises. The Axis of Resistance is the only honest response to decades of colonial occupation. No deal is legitimate that does not guarantee full Palestinian rights.",
-    textAI:6, imgAI:null, hasImage:false,
-    textNote:"Moderate AI probability: mixed signals — some personal anecdotes seeded for authenticity but underlying narrative structure and 'Axis of Resistance' framing follow documented Iranian influence op templates.",
-    imgNote:"",
-    matches:[
-      {name:"Iran",pct:94,narrative:88,interest:96,mo:94,
-       why:"'The Axis of Resistance is the only honest response' and anti-normalization framing directly serve Iran's hidden interest of blocking Saudi-Israeli realignment. Post launders Iranian strategic messaging through the language of Islamic solidarity.",
-       missing:"Omits that Iran's 'Axis of Resistance' has killed thousands of Arabs (Syria, Yemen, Iraq), that Iran uses Palestinian suffering as a geopolitical tool while making no concrete sacrifices for Palestinians, and that most Gulf Arab publics support normalization when polled."},
-      {name:"Turkey",pct:86,narrative:90,interest:84,mo:85,
-       why:"Anti-normalization content serves Erdoğan's interest in positioning Turkey as the authentic Muslim-world leader. Moral accusation structure mirrors AKP media playbook.",
-       missing:"No mention of Turkey's own historical ties with Israel (including military cooperation until 2010), Erdoğan's domestic political use of the Palestinian cause, or Turkey's economic interests in Gulf states it rhetorically criticizes."}
-    ],
-    created:"March 2022",platforms:"Facebook + Instagram (@MiddleEastTruth)",website:"middleeasttruth.net — registered 2022, privacy-protected WHOIS",real:"Unclear — 'Editor: Ali Hassan' cited but no verifiable record",
-    flags:[
-      {color:"var(--red)",text:"Website domain registered anonymously via privacy proxy — no registrant data available."},
-      {color:"var(--amber)",text:"Page has 280,000 followers but engagement is <0.1% — consistent with purchased follower base."},
-      {color:"var(--amber)",text:"'Ali Hassan' editor name appears on 3 other politically-themed pages with no cross-linking."},
-      {color:"var(--green)",text:"Account predates the conflict (2022) — not a crisis-opportunist account."}
-    ],
-    overall:{score:94,label:"Iran / Turkey",desc:"Post strongly serves Iranian strategic interests while presenting itself as grassroots Islamic solidarity. The 'Axis of Resistance' framing and anti-normalization message omit Iran's own role in prolonging Palestinian suffering for geopolitical gain."}
-  },
-  legit: {
-    url:"x.com/YonitLevi_ILNews/status/1122334455",
-    postText:"Just got back from the hospital in Ashkelon. Doctors exhausted, beds full, but working. One surgeon told me 'we haven't slept in 3 days.' The patients I spoke to — Israeli and Gazan both — just want it to stop. Hard to explain this to anyone who isn't here. More tmrw.",
-    textAI:2, imgAI:2, hasImage:true,
-    textNote:"Low AI probability: personal observations, journalistic hedging, informal phrasing and a typo ('tmrw'). Consistent with live field reporting by a human journalist.",
-    imgNote:"Image consistent with field journalism: visible metadata, location tags match GPS coordinates. Reverse-image search traces to verified Reuters feed from the same day.",
-    matches:[],
-    created:"June 2011",platforms:"X + Facebook + LinkedIn + Instagram — consistent identity",website:"yonitlevi.com — registered 2010, transparent WHOIS, links to Reuters bio",real:"Fully verifiable — Reuters senior correspondent, Wikipedia entry, press credentials",
-    flags:[
-      {color:"var(--green)",text:"13-year-old account with consistent posting history and gradual organic follower growth."},
-      {color:"var(--green)",text:"Verified identity across 4 platforms with matching professional biography."},
-      {color:"var(--green)",text:"Website WHOIS is transparent and links to professional media organization."}
-    ],
-    overall:{score:8,label:"No strong alignment detected",desc:"Post presents on-the-ground human reporting with no dominant entity alignment. Low AI probability, verified journalist identity, and balanced framing (includes both Israeli and Gazan perspectives)."}
-  }
-};
-
-const LOAD_STEPS = [
-  "Fetching post content...",
-  "Running AI text detection...",
-  "Analyzing image...",
-  "Scoring narrative against entity database (Claude AI)...",
-  "Running account background check...",
-  "Compiling results..."
-];
-
-// ─────────────────────────────────────────────
-// ANALYZE
-// ─────────────────────────────────────────────
-let currentResult = null;
-
-function resetAnalysis() {
-  document.getElementById('loader').classList.remove('active');
-  document.getElementById('results').classList.remove('active');
-  document.getElementById('url-input').value = '';
-  const pt = document.getElementById('post-text');
-  if (pt) pt.value = '';
-  document.getElementById('manual-text-fallback').style.display = 'none';
-}
-
-async function startAnalysis() {
-  const url = document.getElementById('url-input').value.trim();
-  if (!url) { toast('Please enter a URL.'); return; }
-
-  const serverUrl = getServerUrl();
-  if (!serverUrl) {
-    toast('Please enter your server URL first.');
-    document.getElementById('server-url-input').focus();
-    return;
-  }
-
-  showLoader();
-  try {
-    await performServerAnalysis(url, serverUrl);
-  } catch(e) {
-    document.getElementById('loader').classList.remove('active');
-    // If fetch failed, show manual fallback
-    document.getElementById('manual-text-fallback').style.display = 'block';
-    toast('Could not fetch post automatically: ' + e.message);
-  }
-}
-
-async function analyzeWithManualText() {
-  const url = document.getElementById('url-input').value.trim();
-  const postText = document.getElementById('post-text').value.trim();
-  if (!postText) { toast('Please paste the post text.'); return; }
-
-  const serverUrl = getServerUrl();
-  if (!serverUrl) { toast('Please enter your server URL first.'); return; }
-
-  showLoader();
-  document.getElementById('manual-text-fallback').style.display = 'none';
-
-  try {
-    const entities = getEntities();
-    const steps = document.getElementById('loader-steps').querySelectorAll('.loader-step');
-    const advance = (i) => {
-      if(steps[i]) { steps[i].classList.remove('active'); steps[i].classList.add('done'); steps[i].textContent = '✓ ' + LOAD_STEPS[i]; }
-      if(steps[i+1]) steps[i+1].classList.add('active');
-    };
-    advance(0); await delay(300);
-    advance(1); await delay(300);
-    advance(2);
-    steps[3] && steps[3].classList.add('active');
-
-    const res = await fetch(serverUrl + '/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, postText, entities })
-    });
-    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || 'Server error ' + res.status); }
-    const analysis = await res.json();
-    advance(3); await delay(300);
-    advance(4); await delay(300);
-    advance(5); await delay(200);
-
-    const result = buildResult(analysis, { text: postText }, serverUrl, entities);
-    showResults(url, result);
-    saveToHistory(url, postText, result);
-    recordScan();
-  } catch(e) {
-    document.getElementById('loader').classList.remove('active');
-    document.getElementById('manual-text-fallback').style.display = 'block';
-    toast('Analysis error: ' + e.message);
-  }
-}
-
-async function performServerAnalysis(url, serverUrl) {
-  const entities = getEntities();
-  const steps = document.getElementById('loader-steps').querySelectorAll('.loader-step');
-  const advance = (i) => {
-    if(steps[i]) { steps[i].classList.remove('active'); steps[i].classList.add('done'); steps[i].textContent = '✓ ' + LOAD_STEPS[i]; }
-    if(steps[i+1]) steps[i+1].classList.add('active');
-  };
-
-  advance(0); // fetching
-  steps[1] && steps[1].classList.add('active');
-
-  const res = await fetch(serverUrl + '/fetch-and-analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, entities })
-  });
-
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({}));
-    throw new Error(e.error || 'Server error ' + res.status);
-  }
-
-  advance(1); await delay(250);
-  advance(2); await delay(250);
-  advance(3); await delay(250);
-  advance(4); await delay(250);
-  advance(5); await delay(200);
-
-  const data = await res.json();
-  const result = buildResult(data.analysis, data.post, serverUrl, entities);
-  showResults(url, result);
-  saveToHistory(url, data.post?.text || '', result);
-  recordScan();
-}
-
-function buildResult(analysis, post, serverUrl, entities) {
-  const rawMatches = (analysis.matches || []).map(m => ({
-    ...m,
-    // Recompute pct client-side as fallback in case server omits it or it's undefined
-    pct: typeof m.pct === 'number' && !isNaN(m.pct)
-      ? m.pct
-      : Math.round(((m.interest||0) * 0.55) + ((m.mo||0) * 0.35) + ((m.narrative||0) * 0.10))
-  })).sort((a,b) => b.pct - a.pct);
-  const matches = rawMatches.filter(m => m.pct >= 85);
-  const topMatch = matches.length > 0 ? matches[0].pct : 0;
-  const topName = matches.length > 0 ? matches[0].name : null;
-  const topNames = matches.slice(0,2).map(m=>m.name).join(' / ');
-  return {
-    textAI: analysis.text_ai_score || 5,
-    textNote: analysis.text_ai_reason || '',
-    hasImage: false, imgAI: null, imgNote: 'Image analysis coming in a future version.',
-    matches,
-    created: post?.author ? 'Account: @' + (post.authorHandle || post.author) : 'Requires manual lookup',
-    platforms: post?.source ? 'Fetched via ' + post.source : 'Requires manual lookup',
-    website: 'Requires manual lookup',
-    real: 'Requires manual lookup',
-    flags: [{ color:'var(--amber)', text:'Full account analysis (creation date, cross-platform presence, WHOIS) coming in a future version.' }],
-    overall: {
-      score: topMatch,
-      label: topNames || 'No strong alignment detected',
-      desc: matches.length > 0
-        ? `Claude AI found ${matches.length} entity match${matches.length>1?'es':''} above 85% threshold across ${entities.length} entities. Strongest alignment: ${topName} at ${topMatch}%.`
-        : `Claude AI found no entity alignment above 85% across ${entities.length} entities. Post does not strongly serve any tracked entity's agenda.`
-    }
-  };
-}
-
-function showLoader() {
-  document.getElementById('results').classList.remove('active');
-  const loader = document.getElementById('loader');
-  loader.classList.add('active');
-  const stepsEl = document.getElementById('loader-steps');
-  stepsEl.innerHTML = LOAD_STEPS.map((s,i) => `<div class="loader-step${i===0?' active':''}">${s}</div>`).join('');
-}
-
-function runDemo(key) {
-  const d = DEMOS[key];
-  document.getElementById('url-input').value = d.url;
-  document.getElementById('post-text').value = d.postText || '';
-  showLoader();
-  let i = 0;
-  const steps = document.getElementById('loader-steps').querySelectorAll('.loader-step');
-  const iv = setInterval(() => {
-    if (i < steps.length) {
-      if(i > 0) { steps[i-1].classList.remove('active'); steps[i-1].classList.add('done'); steps[i-1].textContent = '✓ ' + LOAD_STEPS[i-1]; }
-      steps[i].classList.add('active');
-      i++;
-    } else {
-      clearInterval(iv);
-      if(steps[steps.length-1]) { steps[steps.length-1].classList.remove('active'); steps[steps.length-1].classList.add('done'); steps[steps.length-1].textContent = '✓ ' + LOAD_STEPS[steps.length-1]; }
-      setTimeout(() => {
-        showResults(d.url, d);
-        saveToHistory(d.url, d.postText || '[demo]', d);
-        recordScan();
-      }, 300);
-    }
-  }, 380);
-}
 
 function showResults(url, d) {
   document.getElementById('loader').classList.remove('active');
