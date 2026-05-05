@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.6.2 — bug fix
+- Rebuilt entire JavaScript section from scratch after cascading corruption from prior edits
+- Fixed: nav tabs not working, analyze button non-functional, version showing incorrectly
+- All 50 entities, actor profiles, history, and analysis functions fully restored and verified
+
 ### v1.6.1 — bug fix
 - Removed DEMOS data object and runDemo() function (260 lines of dead code from v1.5.0)
 - Removed orphaned .demo-chip and .demo-label CSS styles
