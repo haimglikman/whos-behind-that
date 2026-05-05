@@ -174,6 +174,19 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .no-results { font-size: 13px; color: var(--text3); padding: 24px; text-align: center; }
 .badge-count { font-size: 9px; font-family: var(--mono); background: var(--bg3); border: 1px solid var(--border); border-radius: 99px; padding: 1px 7px; color: var(--text3); margin-left: auto; }
 .section-divider { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 8px; }
+/* Actors */
+.actor-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+.actor-card:hover { border-color: var(--border2); }
+.actor-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.actor-handle { font-family: var(--mono); font-size: 11px; color: var(--blue); margin-bottom: 8px; }
+.actor-location { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.actor-bio { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 10px; }
+.actor-handles { display: flex; gap: 6px; flex-wrap: wrap; }
+.actor-handle-tag { font-size: 10px; padding: 2px 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 99px; color: var(--text2); font-family: var(--mono); }
+.actor-prompt { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+.actor-prompt p { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+.actor-prompt-buttons { display: flex; gap: 8px; }
+.no-actors { font-size: 13px; color: var(--text3); padding: 32px; text-align: center; }
 </style>
 </head>
 <body>
@@ -200,6 +213,11 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
         <svg class="nav-icon" viewBox="0 0 15 15" fill="none"><ellipse cx="7.5" cy="4" rx="5.5" ry="2" stroke="currentColor" stroke-width="1.3"/><path d="M2 4v3.5c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V4" stroke="currentColor" stroke-width="1.3"/><path d="M2 7.5V11c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V7.5" stroke="currentColor" stroke-width="1.3"/></svg>
         Entity database
         <span class="badge-count" id="db-count">20</span>
+      </button>
+      <button class="nav-item" id="nav-actors" onclick="showPage('actors',this)">
+        <svg class="nav-icon" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="4" r="1.5" fill="currentColor" opacity=".4"/><path d="M11.5 4h1M12 3.5v1" stroke="currentColor" stroke-width=".9" stroke-linecap="round"/></svg>
+        Actors
+        <span class="badge-count" id="actors-count">0</span>
       </button>
     </div>
     <div class="nav-section" style="margin-top:8px">
@@ -311,6 +329,19 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
             <div id="r-flags"></div>
           </div>
           <div class="disclaimer-box">This analysis is AI-assisted and combines Claude-powered semantic scoring, content signals, and narrative pattern matching against the entity database. It is not a definitive determination. Always apply human judgment and cross-reference primary sources.</div>
+
+          <!-- Actor research prompt — shown after scan if actor unknown -->
+          <div class="actor-prompt" id="actor-prompt" style="display:none">
+            <p id="actor-prompt-text"></p>
+            <div class="actor-prompt-buttons">
+              <button class="btn btn-sm btn-primary" id="actor-yes-btn" onclick="researchActor()">Yes, research this actor</button>
+              <button class="btn btn-sm" onclick="dismissActorPrompt()">Skip</button>
+            </div>
+          </div>
+          <div class="analysis-card" id="actor-result-card" style="display:none;margin-top:12px">
+            <div class="card-label">Actor profile</div>
+            <div id="actor-result-body"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -369,8 +400,19 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           <h2>Changelog</h2>
 
           <div class="changelog-item">
+            <div class="changelog-ver">v1.6.0</div>
+            <div class="changelog-date">Current version</div>
+            <ul>
+              <li><strong>Actor profiles:</strong> After each scan, app checks if the actor is already profiled. If not, prompts you to research them. Claude researches the handle using OSINT and returns name, bio, location, and known accounts. Profiles are cached — same actor is never looked up twice.</li>
+              <li><strong>Actors tab:</strong> New sidebar tab listing all profiled actors with their bios, locations, and known handles. Profiles can be individually deleted.</li>
+              <li><strong>Expanded entity database:</strong> Grown from 20 to 50 entities. Added Jordan, UAE, Bahrain, Morocco, UK, France, Germany, Iraq, Syria, Muslim Brotherhood, PFLP, AIPAC, J Street, B'Tselem, Amnesty International, Human Rights Watch, ICC/ICJ, Arab League, OIC, South Africa, Israeli Settler Movement, Palestinian Diaspora/BDS, Evangelical Christian Zionists, Global Jihadist Networks, and key politicians including JD Vance, Marco Rubio, AOC/Progressive Caucus, Benny Gantz, Hussein al-Sheikh, Mohammed Sinwar, Khaled Meshaal.</li>
+              <li><strong>Media as MO:</strong> Al Jazeera, Al-Manar, Press TV etc. now captured as instruments within their patron entities' Modus Operandi fields rather than standalone entities.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
             <div class="changelog-ver">v1.5.1</div>
-            <div class="changelog-date">Current version — bug fix</div>
+            <div class="changelog-date">Previous version — bug fix</div>
             <ul>
               <li><strong>Fixed undefined% bug:</strong> Alignment score showed "undefined%" when server response did not include a pre-computed <code>pct</code> field. Score is now recomputed client-side from raw interest/MO/narrative scores as a reliable fallback.</li>
               <li><strong>Added NaN guard:</strong> <code>showResults</code> now safely defaults to 0 if score is missing or malformed, preventing rendering errors.</li>
@@ -468,6 +510,17 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
       </div>
     </div>
 
+    <!-- ── ACTORS PAGE ── -->
+    <div id="page-actors" class="page">
+      <div class="page-header">
+        <div><h1>Actors</h1><p>Profiles of social media actors researched during post analysis</p></div>
+        <button class="btn btn-sm btn-danger" onclick="clearActors()">Clear all</button>
+      </div>
+      <div style="padding:24px 36px">
+        <div id="actors-list"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -476,7 +529,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.6.0';
 // ── Point this at your Render server URL after deploying
 // e.g. 'https://whos-behind-that-server.onrender.com'
 const SERVER_URL = localStorage.getItem('wbt_server_url') || '';
@@ -485,7 +538,72 @@ const SERVER_URL = localStorage.getItem('wbt_server_url') || '';
 // DEFAULT ENTITY DATABASE
 // ─────────────────────────────────────────────
 const DEFAULT_ENTITIES = [
-  { id:1, name:"Israel (Netanyahu government)", type:"Nation state", narrative:"Israel is exercising its inherent right to self-defense following the October 7, 2023 Hamas terrorist attack. The stated goals are: eliminate Hamas military and governing capabilities, secure return of all hostages, and prevent Gaza from being used as a future base for attacks. Israel maintains it targets Hamas infrastructure, not civilians, and that Hamas deliberately embeds in civilian areas.", interest:"Analysts see Israel's strategic interest as permanently dismantling Hamas as a military force, preventing Iranian regional hegemony, maintaining military superiority across the Middle East, and—for Netanyahu's coalition specifically—avoiding a political collapse by prolonging the war and delaying accountability for October 7 intelligence failures.", mo:"Sustained air and ground campaign in Gaza; economic blockade; targeted assassinations of Hamas/Hezbollah leadership; intelligence operations (e.g. pager attacks on Hezbollah); diplomatic pressure to block international legal proceedings; leveraging U.S. military aid.", comments:"Netanyahu personally faces ICC arrest warrant for war crimes. Domestic far-right coalition partners push for annexation and oppose any two-state solution." },
+  // ── NATION STATES ──
+  { id:1, name:"Israel (Netanyahu government)", type:"Nation state", narrative:"Israel is exercising its inherent right to self-defense following the October 7, 2023 Hamas terrorist attack. Goals: eliminate Hamas military and governing capabilities, secure return of all hostages, and prevent Gaza from being used as a future base for attacks. Israel maintains it targets Hamas infrastructure, not civilians.", interest:"Permanently dismantling Hamas as a military force, preventing Iranian regional hegemony, maintaining military superiority, and—for Netanyahu's coalition—avoiding political collapse and delaying accountability for October 7 intelligence failures.", mo:"Sustained air and ground campaign in Gaza; economic blockade; targeted assassinations of Hamas/Hezbollah leadership; pager/walkie-talkie attacks on Hezbollah; diplomatic pressure to block ICC/ICJ proceedings; leveraging U.S. military aid.", comments:"Netanyahu faces ICC arrest warrant. Far-right coalition partners (Ben Gvir, Smotrich) push for annexation and oppose any two-state solution." },
+  { id:2, name:"United States", type:"Nation state", narrative:"Affirms Israel's right to self-defense while calling for civilian protection and humanitarian access. Trump administration unveiled a plan favoring Israeli security interests, floated Gaza displacement proposals, and signaled reduced pressure on Israel.", interest:"Maintaining a stable pro-Western Middle East; protecting Israel as a strategic ally; managing oil flows; securing Saudi normalization; preventing Iran from gaining nuclear capability or regional dominance.", mo:"$22+ billion military aid to Israel since Oct 7; UN Security Council vetoes on ceasefire resolutions; diplomatic brokering; military presence in region; sanctions on select parties.", comments:"Deepest domestic political division on this issue in decades. The U.S. remains the most powerful external actor in the conflict." },
+  { id:3, name:"Iran", type:"Nation state", narrative:"Supports 'the Palestinian resistance' against 'Zionist occupation.' Denies directly ordering proxy attacks, framing support as backing oppressed Muslims. Officials have called for the 'elimination of the Zionist entity' through referendum.", interest:"Extend regional influence via proxy network; bog down Israel and the U.S.; prevent Arab-Israeli normalization especially Saudi; maintain the 'Axis of Resistance' as a deterrent against attack on Iran's nuclear program.", mo:"Funding and arming Hamas, Hezbollah, PIJ, and Houthis; IRGC Quds Force coordination; missile and drone technology transfers; financial transfers via shell entities; Al-Manar and Press TV as media instruments.", comments:"Iran's direct strikes on Israel in April and October 2024 marked historic escalation. Proxy network significantly degraded since October 2023." },
+  { id:4, name:"Qatar", type:"Nation state", narrative:"Supports Palestinian statehood and condemns Israeli military operations as disproportionate. Frames itself as neutral mediator and humanitarian donor, hosting Hamas's political bureau at joint U.S.-Israel request.", interest:"Use unique mediator position to elevate international status, deter Saudi/UAE hostility, and protect itself through strategic irreplaceability — indispensable to all sides. Al Jazeera as soft-power instrument.", mo:"Hosting Hamas political leadership in Doha; mediating ceasefire and hostage negotiations; Al Jazeera media influence; financial support for Gaza; hosting U.S. Al Udeid airbase as insurance.", comments:"Relations with Israel deteriorated sharply after Israeli strike in Doha area in September 2025." },
+  { id:5, name:"Egypt", type:"Nation state", narrative:"Calls for ceasefire, increased humanitarian aid, and political solution based on two-state framework. Controls Rafah crossing and presents itself as key regional broker.", interest:"Preventing Palestinian displacement into Sinai — which would destabilize the peninsula and undermine the Israel peace treaty. Maintaining its role as the indispensable Arab mediator.", mo:"Controlling Rafah crossing as leverage; hosting negotiation rounds; coordinating with the U.S. and Qatar; proposing its own Gaza reconstruction plan as alternative to U.S. displacement proposals.", comments:"Egypt faces significant domestic economic pressure and fears refugee flows could fuel Sinai-based militant groups." },
+  { id:6, name:"Saudi Arabia", type:"Nation state", narrative:"Supports Palestinian state and condemns excessive force against civilians. Crown Prince MBS has made normalization with Israel conditional on credible progress toward Palestinian statehood.", interest:"Securing a U.S. defense pact and nuclear cooperation deal, using normalization with Israel as the price tag — but only on terms that don't ignite Arab street backlash. Maximize leverage to extract maximum concessions.", mo:"Withholding normalization as strategic leverage; leading Arab diplomatic coalitions; conditioning recognition on Palestinian statehood; diversifying partnerships toward China.", comments:"Normalization was near-certain before Oct 7. The war shattered that timeline. Saudi leverage has grown from its willingness to hold out." },
+  { id:7, name:"Turkey", type:"Nation state", narrative:"Erdoğan has been among the most vocal critics of Israel, comparing its actions to Nazi Germany, severing trade relations, and supporting the South Africa genocide case at the ICJ.", interest:"Serving Erdoğan's domestic political needs (strong pro-Palestinian sentiment); positioning Turkey as the leader of the Sunni Muslim world; expanding regional influence in any post-war Gaza governance.", mo:"Hosting Hamas political leaders; filing cases at international courts; suspending trade with Israel; seeking guarantor role in ceasefire; leveraging state media.", comments:"Israel rejected Turkey's formal mediation role. Turkey's trade suspension has limited economic but significant symbolic impact." },
+  { id:8, name:"Jordan", type:"Nation state", narrative:"Calls for two-state solution, end to Israeli occupation, and protection of Palestinian civilians. King Abdullah II has warned of catastrophic consequences of mass Palestinian displacement into Jordan.", interest:"Jordan's existential interest is preventing Palestinian mass displacement — Jordan is already 60%+ Palestinian-origin. Displacement would destabilize the Hashemite Kingdom and threaten the monarchy's survival.", mo:"Diplomatic statements; maintaining peace treaty with Israel while managing domestic opposition; hosting Arab diplomatic summits; threatening to suspend Jordan-Israel peace treaty if displacement occurs.", comments:"Jordan shot down Iranian drones during April 2024 Iran-Israel exchange — a remarkable act that reflects Jordan's interest in regional stability over Arab solidarity." },
+  { id:9, name:"United Arab Emirates", type:"Nation state", narrative:"Calls for humanitarian protection and a two-state solution. Maintains the 2020 Abraham Accords normalization with Israel but has publicly criticized Israeli military operations in Gaza.", interest:"UAE's primary interest is protecting the Abraham Accords investment and its modernization narrative, while managing public opinion at home. Wants post-war Gaza stability that validates the normalization path.", mo:"Quiet diplomacy; maintaining trade and security ties with Israel; pledging Gaza reconstruction funds; using normalization as leverage to push for Israeli restraint.", comments:"UAE was the first Gulf state to normalize with Israel. The war put the Abraham Accords under significant domestic pressure in the UAE." },
+  { id:10, name:"Bahrain", type:"Nation state", narrative:"Signed Abraham Accords in 2020. Has called for ceasefire and protection of civilians while maintaining normalization framework with Israel.", interest:"Bahrain's interest is maintaining the Abraham Accords as a source of U.S. security guarantees and regional stability. Deeply dependent on Saudi Arabia and U.S. backing for regime survival.", mo:"Following Saudi diplomatic lead closely; quiet bilateral ties with Israel; hosting U.S. Fifth Fleet as security guarantee.", comments:"Bahrain's domestic Shia majority is strongly pro-Palestinian — the government faces real internal pressure over normalization." },
+  { id:11, name:"Morocco", type:"Nation state", narrative:"Normalized with Israel in 2020 (Abraham Accords) in exchange for U.S. recognition of Moroccan sovereignty over Western Sahara. Calls for two-state solution and humanitarian protection.", interest:"Morocco's primary interest in the conflict is protecting the U.S. recognition of Western Sahara — which is contingent on the Abraham Accords remaining intact. Palestinian issue is secondary to this core interest.", mo:"Maintaining normalization despite domestic and pan-Arab pressure; quiet diplomatic coordination with Israel; hosting bilateral trade and tourism.", comments:"Morocco faces strong public pressure from a population deeply sympathetic to Palestinians — the government manages this through statements while keeping normalization intact." },
+  { id:12, name:"United Kingdom", type:"Nation state", narrative:"Affirms Israel's right to self-defense while calling for adherence to international humanitarian law, civilian protection, and a two-state solution. Has suspended some arms sales to Israel.", interest:"UK interests include maintaining the special relationship with the U.S. (which means Israel alignment), managing large British Muslim domestic constituency, upholding international law norms, and post-Brexit diplomatic relevance.", mo:"Partial arms embargo; diplomatic statements; participating in joint strikes against Houthis (Red Sea); co-sponsoring UN resolutions; maintaining bilateral trade with Israel.", comments:"UK suspended some F-35 component exports to Israel in 2024. Labour government under Starmer has taken slightly more critical stance than the Conservatives." },
+  { id:13, name:"France", type:"Nation state", narrative:"Supports Israel's right to self-defense while calling for civilian protection, a humanitarian pause, and a two-state solution. Macron has been more vocal than most Western leaders in criticizing Israeli military tactics.", interest:"France's interest is positioning itself as the lead European diplomatic voice on the conflict, protecting its substantial Muslim constituency domestically, maintaining influence in Lebanon (historic ties), and asserting EU diplomatic relevance.", mo:"Hosting diplomatic summits; proposing international observer forces; bilateral pressure on Israel; maintaining arms review; leading EU statements.", comments:"France has the largest Muslim population in Western Europe — domestic political pressure on this issue is significant for Macron and his successors." },
+  { id:14, name:"Germany", type:"Nation state", narrative:"Has been the most staunchly pro-Israel European nation due to Holocaust historical responsibility. Affirms Israel's right to exist and defend itself unconditionally.", interest:"Germany's primary interest is its historical obligation to Jewish security — this is embedded in the German constitution and national identity. Secondary interest is maintaining EU unity on foreign policy.", mo:"Strong diplomatic support for Israel; resisting EU arms embargoes; providing submarines to Israel; recently shifting toward more critical stance on humanitarian grounds as death toll rose.", comments:"Germany's unconditional support for Israel has faced growing internal pressure. Germany has begun to shift language on civilian protection in 2024-2025." },
+  { id:15, name:"Iraq", type:"Nation state", narrative:"Strongly opposes Israeli military operations in Gaza. Iraqi government and militia factions have framed the conflict as part of broader resistance to U.S.-Israeli hegemony in the region.", interest:"Iraq is divided — the formal government wants stability and U.S. investment, but Iran-aligned Shia militias (Popular Mobilization Forces) use the Palestinian cause to advance Iranian interests and domestic legitimacy.", mo:"Iraqi militias (Kataib Hezbollah etc.) launching drones at Israel and U.S. bases; formal government issuing condemnatory statements while avoiding direct confrontation; Iran channeling weapons through Iraqi territory.", comments:"Iraq is a key transit corridor for Iranian weapons to Hezbollah and Palestinian groups. The government has limited control over Iranian-aligned militias operating on its soil." },
+  { id:16, name:"Syria", type:"Nation state", narrative:"Assad government frames the conflict as Arab resistance to Zionism and Western imperialism. Palestinian camps in Syria have been sites of both solidarity and tragedy throughout the conflict's history.", interest:"Assad's interest is using the Palestinian cause rhetorically while leveraging the conflict to normalize his regime's international standing after the civil war. Now post-Assad under new Islamist-linked government with different calculus.", mo:"Allowing Iranian weapons transit; hosting Palestinian political factions; post-Assad Syria (HTS/Jolani government) recalibrating away from Iran's influence.", comments:"Syria under HTS since December 2024 is a fundamentally different actor than under Assad — the new government is distancing from Iran and seeking Western recognition." },
+
+  // ── TERROR ORGANIZATIONS & MILITIAS ──
+  { id:17, name:"Hamas", type:"Terror organization", narrative:"The armed resistance against Israeli occupation and the only force genuinely fighting for Palestinian liberation. Justifies October 7 as a response to years of siege, blockade, and settler violence. Calls for full Palestinian sovereignty over historic Palestine and the 'right of return'.", interest:"Survival as a governing and military entity; leverage for prisoner exchanges; preventing the PA from replacing it in Gaza; sustained armed conflict as the only path to its political goals.", mo:"Guerrilla warfare; tunnel networks; hostage-taking as bargaining chip; rocket attacks; embedding in civilian infrastructure; political bureau in Doha for diplomacy; martyrdom glorification in media.", comments:"Top leadership (Haniyeh, Sinwar, Deif) assassinated by Israel in 2024. Mohammed Sinwar believed to be current Gaza commander. Organization has shown ability to reconstitute." },
+  { id:18, name:"Hezbollah", type:"Terror organization", narrative:"Resistance movement against Israeli occupation of Lebanese territory and defender of the Palestinian cause. Solidarity with Gaza; willingness to open a 'northern front' to pressure Israel.", interest:"Preserving military deterrence capability and political power in Lebanon; serving as Iran's forward shield; opening a second front exhausts Israeli military resources.", mo:"Rocket and missile barrages on northern Israel; cross-border incursions; Iran's primary regional proxy; political power within Lebanon through parliament; Al-Manar TV as media instrument.", comments:"Secretary-General Nasrallah killed September 2024. Organization significantly degraded by Israel's 2024 Lebanon campaign including the pager/walkie-talkie attacks." },
+  { id:19, name:"Palestinian Islamic Jihad (PIJ)", type:"Terror organization", narrative:"Total liberation of historic Palestine through armed resistance. Rejects all negotiations with Israel and any settlement short of full Palestinian sovereignty.", interest:"Armed resistance as both strategy and principle. Serves as Iran's most direct proxy in Gaza — often launching attacks on Iran's timetable rather than in Palestinian strategic interests.", mo:"Rocket attacks; coordinating with Hamas and Iran's IRGC; tunnel and guerrilla operations; refusing any ceasefire negotiations.", comments:"Smaller than Hamas but considered more hardline. Leadership based in Damascus with very direct IRGC ties." },
+  { id:20, name:"Houthis (Ansar Allah)", type:"Militia", narrative:"Missile attacks on Israel and Red Sea shipping are acts of solidarity with Palestinians in Gaza. 'Death to America, death to Israel.' Demands ceasefire and lifting of Gaza blockade.", interest:"Primarily domestic — using the Palestinian cause to legitimize Houthi governance in Yemen, build popular support, improve position in Saudi peace talks, assert regional power status.", mo:"Ballistic missiles and drones toward Israel and Eilat; attacking commercial ships in the Red Sea; threatening all vessels heading to Israeli ports; coordinating with Iran's IRGC.", comments:"Houthi leadership significantly struck by Israel and U.S. in 2024-2025. Resumed attacks on Israel in March 2026 amid U.S.-Israeli operations against Iran." },
+  { id:21, name:"Popular Front for the Liberation of Palestine (PFLP)", type:"Terror organization", narrative:"Marxist-Leninist secular Palestinian liberation organization. Frames the conflict as anti-imperialist struggle against Zionism and Western colonialism. Opposes Oslo Accords and any negotiated settlement.", interest:"Palestinian liberation through armed struggle; opposing both Islamist groups (Hamas/PIJ) and the PA as collaborationist; maintaining relevance as a secular leftist voice in Palestinian politics.", mo:"Historically: aircraft hijackings, assassinations (killed Israeli tourism minister 2001); currently: armed operations in West Bank; coalition with Hamas in Gaza while maintaining ideological independence.", comments:"Second-largest PLO faction. Receives some support from Syria and has historical ties to leftist international movements. Less active militarily than Hamas but influential ideologically." },
+  { id:22, name:"Muslim Brotherhood", type:"Int'l organization", narrative:"Pan-Islamic political movement that supports Palestinian self-determination as a religious and moral obligation. Frames the conflict through Islamic law and the duty of Muslim solidarity.", interest:"Using the Palestinian cause to advance political Islam globally; gaining legitimacy and recruits; pressuring secular Arab governments to align with Islamist positions.", mo:"Political mobilization in countries where it operates (Jordan, Egypt, Turkey-aligned); funding charitable networks used for political influence; media and da'wah (outreach) networks.", comments:"Hamas is the Palestinian branch of the Muslim Brotherhood. The Brotherhood's influence varies dramatically by country — banned in Egypt and UAE, tolerated in Jordan, allied with Erdoğan's AKP in Turkey." },
+
+  // ── PALESTINIAN AUTHORITY & OFFICIALS ──
+  { id:23, name:"Palestinian Authority (PA) / Mahmoud Abbas", type:"Politician", narrative:"Advocates for a two-state solution based on 1967 borders with East Jerusalem as capital. Opposes Hamas and claims to be the sole legitimate representative of the Palestinian people. Condemned October 7.", interest:"Political survival and reasserting PA control over Gaza post-war. Preventing Hamas from permanently replacing the PA. Securing international recognition and financial support.", mo:"UN diplomatic lobbying; engaging Arab and European states; international recognition of the PLO; security coordination with Israel in the West Bank (controversial); relying on international donor funds.", comments:"Abbas is 89 with no clear succession plan. The PA is widely seen as corrupt and ineffective. Last held elections in 2006." },
+  { id:24, name:"Hussein al-Sheikh", type:"Politician", narrative:"PLO Secretary-General and likely Abbas successor. Advocates for PA governance of Gaza post-war and a negotiated two-state solution. Positioned as a moderate pragmatist.", interest:"Positioning himself as Abbas's successor; consolidating PLO leadership; reasserting Fatah dominance over the Palestinian political landscape including Gaza.", mo:"Diplomatic meetings with Arab and Western leaders; building international support for PA role in post-war Gaza governance; managing relationship with Israel on security coordination.", comments:"Widely seen as the front-runner to lead the PA after Abbas. Has met with senior U.S. officials. His secular-nationalist approach contrasts sharply with Hamas's Islamism." },
+  { id:25, name:"Mohammed Sinwar", type:"Politician", narrative:"Believed to be Hamas's de facto military commander in Gaza following the assassinations of October 7-era leadership. Maintains Hamas's position: armed resistance until full Palestinian liberation.", interest:"Organizational survival of Hamas; maintaining armed resistance as Hamas's core identity; preventing any governance arrangement that marginalizes Hamas's military wing.", mo:"Underground command and control in Gaza tunnel network; maintaining military pressure on Israel; preventing ceasefire terms that would disarm or displace Hamas fighters.", comments:"Less publicly visible than his brother Yahya. Israel has made him a primary target. His continued operational capacity after sustained Israeli pressure is a significant intelligence challenge." },
+  { id:26, name:"Khaled Meshaal", type:"Politician", narrative:"Hamas political bureau leader based in Qatar. Frames the conflict as a legitimate resistance struggle and advocates for a unified Palestinian front under Hamas's leadership.", interest:"Maintaining Hamas's political legitimacy internationally; positioning himself within Hamas's post-October 7 leadership restructuring; securing continued Qatari and Iranian financial support.", mo:"International diplomatic meetings; media appearances on Al Jazeera and Arab networks; coordinating political positions between Hamas's external leadership and internal Gaza command.", comments:"Has been based outside Gaza for decades. Represents the more politically pragmatic wing of Hamas versus the hardline military wing inside Gaza." },
+
+  // ── ISRAELI POLITICIANS ──
+  { id:27, name:"Benjamin Netanyahu", type:"Politician", narrative:"The war is an existential fight for Israel's survival against 'the new Nazis.' Israel will not stop until Hamas is destroyed and all hostages returned. Opposes Palestinian state.", interest:"Personal political survival — a ceasefire risks collapse of his far-right coalition and could accelerate his corruption trial and ICC proceedings against him.", mo:"Maintaining coalition with Ben Gvir and Smotrich; delaying hostage deal negotiations when politically convenient; lobbying Washington; controlling military messaging.", comments:"ICC arrest warrant issued November 2024 for war crimes and crimes against humanity. Has affected his international travel and standing." },
+  { id:28, name:"Itamar Ben Gvir & Bezalel Smotrich", type:"Politician", narrative:"Advocate for Israeli annexation of the West Bank, expanded settlements, and blocking any Palestinian state. Called for voluntary emigration of Palestinians from Gaza and reestablishment of Israeli settlements.", interest:"Using the war to permanently foreclose any two-state possibility and annex the West Bank. Hold Netanyahu's coalition hostage — their departure would collapse his government.", mo:"Threatening coalition collapse to block ceasefire deals; blocking humanitarian aid; promoting West Bank settlement expansion; funding settler violence; inflammatory visits to Al-Aqsa.", comments:"Both face U.S. and EU sanctions consideration. Ben Gvir stormed the military detention facility where soldiers accused of abuse were held." },
+  { id:29, name:"Benny Gantz", type:"Politician", narrative:"Supported entering the emergency war cabinet after October 7 but resigned in June 2024 over lack of a clear post-war strategy. Advocates for a hostage deal and a credible day-after plan for Gaza.", interest:"Positioning himself as the centrist alternative to Netanyahu — responsible, security-focused, but not extremist. Building support for the next Israeli election, whenever it comes.", mo:"Public criticism of war cabinet decision-making; advocating for hostage deal priority; media appearances; building coalition with other centrist parties.", comments:"His resignation from the war cabinet was a significant political moment, signaling the governing coalition's internal fractures over war aims." },
+
+  // ── U.S. POLITICIANS ──
+  { id:30, name:"Donald Trump", type:"Politician", narrative:"Strong support for Israel and expansive Israeli war aims. Proposed 'riviera' plan for Gaza involving displacing Palestinians to Egypt and Jordan. Mediated the January 2025 ceasefire phase agreement.", interest:"Securing a major Middle East 'deal' as a legacy achievement; pleasing pro-Israel evangelical and donor base; weakening Iran's regional position; extracting economic and diplomatic concessions from Gulf states.", mo:"Proposing and pressuring parties toward his own peace framework; granting Israel more military latitude than Biden; pressuring Saudi Arabia toward normalization; floating Gaza displacement as U.S. policy.", comments:"Gaza displacement proposal rejected by Egypt, Jordan, Saudi Arabia, Turkey, and all EU nations. Relationship with Netanyahu is the warmest of any U.S. president." },
+  { id:31, name:"JD Vance", type:"Politician", narrative:"Supports Israel's right to defend itself. More isolationist instinct than traditional Republicans on foreign aid but has not broken with the administration's pro-Israel stance.", interest:"Building his own foreign policy brand distinct from both neoconservatism and pure isolationism; positioning for potential future presidential run; maintaining base of MAGA voters who are pro-Israel but anti-foreign-entanglement.", mo:"Senate speeches and media appearances; aligning with Trump's Middle East framework while occasionally signaling skepticism of open-ended commitments; focus on Iran nuclear deal opposition.", comments:"Vance's foreign policy views are still evolving. His 'America First' instincts sometimes pull against Israel hawk positions, creating occasional tension within the administration." },
+  { id:32, name:"Marco Rubio", type:"Politician", narrative:"As Secretary of State, strongly supports Israel's right to defend itself and opposes any pressure on Israel to limit its military operations. Hawkish on Iran.", interest:"Projecting U.S. strength in the Middle East; containing Iran; maintaining Israel as a key U.S. ally; advancing Republican foreign policy credentials.", mo:"Diplomatic pressure on parties to support U.S.-Israel positions; advocating against ICC jurisdiction over Israeli officials; managing ceasefire negotiations to favor Israeli interests.", comments:"Rubio is one of the most hawkish voices in the administration on both Israel and Iran. His positions have significant influence on U.S. diplomatic posture." },
+  { id:33, name:"AOC / US Progressive Caucus", type:"Politician", narrative:"Calls for immediate ceasefire, end to U.S. military aid to Israel, arms embargo, and recognition of Palestinian statehood. Frames Israeli military operations as collective punishment and calls for ICC accountability.", interest:"Representing a large and growing progressive Democratic constituency that is increasingly critical of U.S.-Israel policy; building political brand around human rights and anti-militarism; pressuring the Democratic Party establishment.", mo:"Congressional speeches; social media with massive following (AOC has 13M+ Twitter followers); pushing legislation to condition military aid; organizing progressive blocs to vote against Israel aid packages.", comments:"The progressive caucus's influence has grown significantly among younger Democrats. Their positions represent a real shift in the Democratic Party's internal balance on this issue." },
+
+  // ── INTERNATIONAL ORGANIZATIONS ──
+  { id:34, name:"United Nations / UNRWA", type:"Int'l organization", narrative:"Calls for immediate ceasefire, unrestricted humanitarian access, protection of civilians, and a political solution based on established UN resolutions. UNRWA is the primary humanitarian services provider for Palestinians.", interest:"Upholding international humanitarian law and institutional legitimacy. UNRWA specifically fights for its own survival as an organization amid Israeli efforts to dismantle it.", mo:"Security Council resolutions (often vetoed by U.S.); General Assembly votes; ICJ and ICC proceedings; UNRWA humanitarian operations; public reporting on casualties, famine, and water deprivation.", comments:"Israel passed a law banning UNRWA operations in November 2024, accusing some staff of involvement in October 7. Several donor countries temporarily froze funding." },
+  { id:35, name:"European Union", type:"Int'l organization", narrative:"Supports a two-state solution; calls for humanitarian access; condemned both October 7 attacks and scale of Israeli military operations. Member states are deeply divided.", interest:"Maintaining relevance as a diplomatic actor; managing refugee flows; protecting trade routes; upholding international rules-based order; managing internal EU divisions between pro-Israel and critical member states.", mo:"Targeted sanctions on extremist Israeli settlers; suspension of some arms sales; financial support for UNRWA; joint diplomatic statements; recognition of Palestinian statehood by some members (Spain, Ireland, Norway).", comments:"EU unity is extremely fragile. Hungary and Germany have often blocked more critical EU stances toward Israel." },
+  { id:36, name:"ICC / ICJ", type:"Int'l organization", narrative:"The ICC investigates alleged war crimes and crimes against humanity by all parties. The ICJ adjudicates state disputes under international law, including South Africa's genocide case against Israel.", interest:"Institutional interest in asserting jurisdiction and establishing precedents for international accountability — regardless of which states or individuals are involved.", mo:"ICC arrest warrants (Netanyahu, Gallant, Hamas leaders); ICJ preliminary rulings; South Africa genocide case proceedings; investigations into conduct of all parties.", comments:"The ICC warrants for Netanyahu and Gallant were historic — first time sitting leaders of a close Western ally faced such action. The U.S. sanctioned ICC prosecutor Karim Khan in response." },
+  { id:37, name:"Arab League", type:"Int'l organization", narrative:"Calls for ceasefire, two-state solution, and end to Israeli occupation. Has historically been the formal vehicle for coordinated Arab state positions on the Palestinian issue.", interest:"Maintaining relevance as Arab states increasingly pursue independent bilateral policies. Providing diplomatic cover for member states that want to appear pro-Palestinian while privately pursuing other interests.", mo:"Joint diplomatic statements; coordinating positions at UN; Arab Peace Initiative (still nominally on the table); summits producing declarations.", comments:"The Arab League has been significantly weakened by the Abraham Accords and bilateral Arab-Israel normalization. Its statements carry less weight than direct bilateral diplomacy." },
+  { id:38, name:"Organisation of Islamic Cooperation (OIC)", type:"Int'l organization", narrative:"Represents 57 Muslim-majority states. Consistently calls for end to Israeli occupation, protection of Palestinian rights, and Al-Aqsa Mosque sovereignty for Muslims.", interest:"Demonstrating Islamic solidarity while managing deep divisions among member states (some of which have normalized with Israel). Maintaining relevance as the voice of the Muslim world.", mo:"Emergency summits; joint statements; diplomatic pressure; coordinating positions at UN General Assembly.", comments:"Like the Arab League, the OIC's actual influence is limited. Its statements reflect political consensus rather than operational coordination." },
+
+  // ── CIVIL SOCIETY & ADVOCACY ──
+  { id:39, name:"AIPAC (American Israel Public Affairs Committee)", type:"Int'l organization", narrative:"Advocates for strong U.S.-Israel relationship, U.S. military aid to Israel, and U.S. diplomatic support for Israeli security interests. Frames Israel as a critical U.S. ally and the only democracy in the Middle East.", interest:"Maintaining and strengthening U.S. military and diplomatic support for Israel; defeating candidates who advocate conditioning aid; ensuring bipartisan pro-Israel consensus in U.S. politics.", mo:"Political donations (Super PAC spending); lobbying Congress; electoral intervention against progressive critics of Israel; coalition building with evangelical Christian organizations.", comments:"AIPAC spent over $100 million in the 2024 election cycle, primarily targeting progressive Democrats critical of Israel. It has become more overtly partisan in recent years." },
+  { id:40, name:"J Street", type:"Int'l organization", narrative:"Pro-Israel, pro-peace U.S. advocacy organization. Supports a two-state solution, opposes Israeli settlement expansion, and advocates for conditioning U.S. military aid on Israeli compliance with international law.", interest:"Representing American Jews who support Israel's existence but oppose Netanyahu's policies and the occupation. Providing political cover for Democrats who want to criticize Israeli policies without being labeled anti-Israel.", mo:"Lobbying Congress; electoral endorsements of pro-peace candidates; public campaigns; coalition building with progressive organizations.", comments:"J Street positions itself as the alternative to AIPAC — pro-Israel but critical of specific policies. Its influence has grown among younger American Jews." },
+  { id:41, name:"B'Tselem", type:"Int'l organization", narrative:"Israeli human rights organization documenting Israeli human rights violations against Palestinians in the West Bank and Gaza. Has called Israeli policy in the occupied territories a form of apartheid.", interest:"Institutional interest in documenting and publicizing human rights violations to create accountability pressure on the Israeli government. Funded primarily by European governments and foundations.", mo:"Field documentation of incidents; publishing reports widely cited by international media and governments; legal submissions to ICC and Israeli courts; media appearances.", comments:"B'Tselem's 'apartheid' designation was highly controversial and influential. The Israeli government has attempted to delegitimize it as a foreign-funded political organization." },
+  { id:42, name:"Amnesty International", type:"Int'l organization", narrative:"Documents human rights violations by all parties. Has accused Israel of committing apartheid and genocide, and has documented Hamas war crimes. Calls for ICC accountability for all parties.", interest:"Institutional credibility as a neutral human rights monitor; donor funding dependent on maintaining reputation for evenhandedness; institutional interest in expanding ICC jurisdiction and international law application.", mo:"Reports on civilian casualties, use of white phosphorus, starvation as weapon; calling for arms embargoes; submitting evidence to ICC; public advocacy campaigns.", comments:"Amnesty's 'genocide' determination was extremely controversial and disputed by many legal scholars. Israel has rejected its findings entirely." },
+  { id:43, name:"Human Rights Watch", type:"Int'l organization", narrative:"Similar to Amnesty — documents violations by all parties. Has accused Israel of using starvation as a weapon of war and has documented Hamas's targeting of Israeli civilians on October 7.", interest:"Institutional credibility; donor funding; expanding international law accountability mechanisms; maintaining relevance in an increasingly contested human rights landscape.", mo:"Field investigations; detailed reports; media engagement; legal submissions to international bodies; advocacy for arms embargoes.", comments:"HRW and Amnesty's reports are widely cited by critics of Israel and dismissed by supporters. Their methodology and funding sources are frequently contested." },
+
+  // ── OTHER KEY ACTORS ──
+  { id:44, name:"Russia", type:"Nation state", narrative:"Calls for ceasefire and two-state solution, presenting itself as a neutral party. Hosts Hamas political delegations in Moscow.", interest:"Using the conflict to deflect global attention from Ukraine, deepen Western divisions, strengthen ties with the Arab world and Global South, and undermine U.S. credibility as a peace broker.", mo:"UN veto coordination; hosting Hamas delegations; leveraging RT and state media for pro-Palestinian messaging that also weakens Western narratives; diplomatic outreach to Arab states.", comments:"Russia's position is largely opportunistic. It benefits strategically from prolonged Western distraction." },
+  { id:45, name:"China", type:"Nation state", narrative:"Supports Palestinian statehood and two-state solution. Has condemned civilian casualties and called for ceasefire at the UN. Brokered 2023 Iran-Saudi Arabia rapprochement.", interest:"Expanding influence in Arab and Muslim world; positioning as a constructive alternative to U.S.-led order; protecting oil supply relationships with Gulf states; building 'Global South' coalition against Western hegemony.", mo:"UN diplomatic statements; offering itself as peace mediator; maintaining economic ties with both Israeli and Arab partners; state media narratives emphasizing U.S. hypocrisy.", comments:"China has limited leverage over the conflict's actual parties but uses it effectively in its competition with the U.S. for global influence." },
+  { id:46, name:"South Africa", type:"Nation state", narrative:"Filed genocide case against Israel at the ICJ in December 2023. Frames the conflict through its own historical experience of apartheid and draws explicit parallels to Israel's treatment of Palestinians.", interest:"Positioning South Africa as a leader of the Global South and champion of international law against powerful states; ANC domestic politics — the Palestinian cause resonates deeply with ANC's liberation movement identity.", mo:"ICJ genocide case submissions; diplomatic coalitions with other Global South states; hosting Palestinian delegations; bilateral sanctions consideration.", comments:"South Africa's ICJ case has been the most legally significant international challenge to Israel's conduct. The preliminary ruling found plausible genocide claims and ordered Israel to prevent genocidal acts." },
+  { id:47, name:"Israeli Settler Movement", type:"Int'l organization", narrative:"Jewish people have a biblical and historical right to settle all of the Land of Israel, including the West Bank (Judea and Samaria). Settlement expansion is a religious obligation and a security necessity.", interest:"Permanent Israeli control over the West Bank; preventing any Palestinian state; using the Gaza war as an opportunity to expand settlements and apply Israeli law to the West Bank.", mo:"Settler violence against Palestinians; building new outposts; lobbying Ben Gvir and Smotrich; blocking IDF action against settlers; creating facts on the ground that make a two-state solution physically impossible.", comments:"Settler violence in the West Bank has increased dramatically since October 7. Several settler leaders have openly called for resettling Gaza. The U.S. and EU have sanctioned specific settlers." },
+  { id:48, name:"Palestinian Diaspora / BDS Movement", type:"Int'l organization", narrative:"Calls for boycott, divestment, and sanctions against Israel until it ends occupation, grants equal rights to Arab citizens, and allows Palestinian refugee return. Frames this as non-violent pressure strategy.", interest:"Building international pressure on Israel through economic and cultural isolation; keeping the Palestinian cause on the global agenda; creating political costs for governments that support Israel unconditionally.", mo:"Campus organizing; corporate divestment campaigns; cultural boycotts (artists refusing to perform in Israel); targeting Israeli exports; legal campaigns in various countries.", comments:"BDS has achieved some corporate divestments and cultural boycotts but has been countered by anti-BDS legislation in many U.S. states and European countries. Its 'right of return' demand is rejected by most Israeli political parties as incompatible with a Jewish state." },
+  { id:49, name:"Evangelical Christian Zionists (U.S.)", type:"Int'l organization", narrative:"Israel's existence and the Jewish people's return to their homeland are fulfillment of biblical prophecy. Christians have a religious obligation to support Israel. Oppose any division of Jerusalem or Israeli land.", interest:"Ensuring U.S. political and military support for Israel remains unconditional; blocking any peace deal that divides Jerusalem; supporting Israeli sovereignty over biblical lands including the West Bank.", mo:"Political lobbying through organizations like Christians United for Israel (CUFI); electoral mobilization of evangelical voters; fundraising for Israeli settlements; pro-Israel media.", comments:"Evangelical Christians are one of the most reliably pro-Israel constituencies in the U.S. Their support is a key factor in Republican Party's near-unconditional backing of Israel." },
+  { id:50, name:"Global Jihadist Networks (Al-Qaeda / ISIS affiliates)", type:"Terror organization", narrative:"Frame the Israeli-Palestinian conflict as part of a cosmic war between Islam and the West/Zionism. Use Gaza civilian casualties as recruitment material and justification for attacks globally.", interest:"Using the conflict to recruit, radicalize, and incite attacks in Western countries and against Israel. Gaza imagery serves as the most powerful radicalization content available.", mo:"Online propaganda using Gaza imagery; inciting 'lone wolf' attacks in Western cities; recruitment messaging framing Gaza as proof that the West wages war on Islam; attempting to exploit conflict to expand influence at Hamas's expense.", comments:"ISIS and Al-Qaeda actually have complex relationships with Hamas — both have criticized Hamas for being too 'nationalist' rather than sufficiently Islamist. But they exploit the conflict heavily for their own purposes." }
+]; narrative:"Israel is exercising its inherent right to self-defense following the October 7, 2023 Hamas terrorist attack. The stated goals are: eliminate Hamas military and governing capabilities, secure return of all hostages, and prevent Gaza from being used as a future base for attacks. Israel maintains it targets Hamas infrastructure, not civilians, and that Hamas deliberately embeds in civilian areas.", interest:"Analysts see Israel's strategic interest as permanently dismantling Hamas as a military force, preventing Iranian regional hegemony, maintaining military superiority across the Middle East, and—for Netanyahu's coalition specifically—avoiding a political collapse by prolonging the war and delaying accountability for October 7 intelligence failures.", mo:"Sustained air and ground campaign in Gaza; economic blockade; targeted assassinations of Hamas/Hezbollah leadership; intelligence operations (e.g. pager attacks on Hezbollah); diplomatic pressure to block international legal proceedings; leveraging U.S. military aid.", comments:"Netanyahu personally faces ICC arrest warrant for war crimes. Domestic far-right coalition partners push for annexation and oppose any two-state solution." },
   { id:2, name:"Hamas", type:"Terror organization", narrative:"Hamas frames itself as the armed resistance against Israeli occupation and the only force genuinely fighting for Palestinian liberation. It justifies October 7 as a response to years of siege, blockade, and settler violence. Publicly calls for full Palestinian sovereignty over historic Palestine and the 'right of return'.", interest:"Hamas's core interest is survival as a governing and military entity, leverage for prisoner exchanges, and preventing the Palestinian Authority from replacing it in Gaza. October 7 may have also aimed to derail Saudi-Israeli normalization.", mo:"Guerrilla warfare; tunnel networks; hostage-taking as bargaining chip; rocket attacks; embedding fighters in civilian infrastructure; political offices abroad (Doha) for diplomacy.", comments:"Top military and political leadership (Haniyeh, Sinwar, Deif) assassinated by Israel in 2024. Organization has shown ability to reconstitute." },
   { id:3, name:"Iran", type:"Nation state", narrative:"Iran's official position is that it supports 'the Palestinian resistance' against 'Zionist occupation.' It denies directly ordering proxy attacks but frames its support as backing oppressed Muslims. Iranian officials have called for the 'elimination of the Zionist entity' through referendum.", interest:"Iran's primary interest is using the conflict to extend regional influence, bog down Israel and the U.S., prevent Arab-Israeli normalization (especially Saudi), and maintain the 'Axis of Resistance' as a deterrent against attack on Iran's own nuclear program.", mo:"Funding and arming Hamas, Hezbollah, PIJ, and the Houthis; IRGC Quds Force coordination; providing missile and drone technology; financial transfers via shell entities.", comments:"Iran's direct strikes on Israel in April and October 2024 marked a historic escalation. Iran's proxy network significantly degraded since October 2023." },
   { id:4, name:"Hezbollah", type:"Terror organization", narrative:"Hezbollah frames itself as a resistance movement against Israeli occupation of Lebanese territory and as the defender of the Palestinian cause. Its official stance is solidarity with Gaza and willingness to open a 'northern front' to pressure Israel.", interest:"Hezbollah's main interest is preserving its military deterrence capability and political power in Lebanon, while serving as Iran's forward shield. Opening a second front helps exhaust Israeli military resources.", mo:"Rocket and missile barrages on northern Israel; cross-border incursions; operating as Iran's primary regional proxy; political power within Lebanon through parliament and government positions.", comments:"Secretary-General Hassan Nasrallah killed by Israeli airstrike in September 2024. Organization significantly degraded by Israel's 2024 Lebanon campaign." },
@@ -525,6 +643,14 @@ function recordScan() {
   updateScanCounter();
 }
 function getServerUrl() { return localStorage.getItem('wbt_server_url') || ''; }
+function getActors() { try { return JSON.parse(localStorage.getItem('wbt_actors') || '{}'); } catch(e) { return {}; } }
+function saveActors(a) { localStorage.setItem('wbt_actors', JSON.stringify(a)); updateActorsCount(); }
+function updateActorsCount() {
+  const a = getActors();
+  document.getElementById('actors-count').textContent = Object.keys(a).length;
+}
+function actorKey(handle) { return (handle||'').toLowerCase().replace(/[@\s]/g,''); }
+
 function saveServerUrl() {
   const val = document.getElementById('server-url-input').value.trim().replace(/\/$/, '');
   localStorage.setItem('wbt_server_url', val);
@@ -562,7 +688,6 @@ function updateScanCounter() {
 // NAV
 // ─────────────────────────────────────────────
 function showPage(name, el) {
-  // Auto-clear analyze tab when navigating away from it
   const currentPage = document.querySelector('.page.active');
   if (currentPage && currentPage.id === 'page-analyze' && name !== 'analyze') {
     resetAnalysis();
@@ -573,6 +698,7 @@ function showPage(name, el) {
   if (el) el.classList.add('active');
   if (name === 'database') renderDB();
   if (name === 'history') renderHistory();
+  if (name === 'actors') renderActors();
 }
 
 // ─────────────────────────────────────────────
@@ -607,6 +733,18 @@ function pillClass(type) {
 }
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function extractHandle(url) {
+  // X/Twitter: x.com/handle/status/... or twitter.com/handle/status/...
+  let m = url.match(/(?:x\.com|twitter\.com)\/([^\/\?]+)(?:\/status\/)?/i);
+  if (m && m[1] && !['i','home','search','explore'].includes(m[1])) return m[1];
+  // Instagram: instagram.com/handle/p/...
+  m = url.match(/instagram\.com\/([^\/\?]+)/i);
+  if (m && m[1] && !['p','reel','stories','explore'].includes(m[1])) return m[1];
+  // Facebook: facebook.com/handle/posts/... or facebook.com/profile.php?id=...
+  m = url.match(/facebook\.com\/([^\/\?]+)(?:\/posts\/)?/i);
+  if (m && m[1] && !['photo','video','groups','pages','events','profile.php'].includes(m[1])) return m[1];
+  return null;
+}
 
 // Claude scoring now handled server-side — see server.js
 
@@ -876,6 +1014,26 @@ function showResults(url, d) {
   document.getElementById('result-url-label').textContent = url;
   currentResult = { url, ...d };
 
+  // Hide actor prompt and result card initially
+  document.getElementById('actor-prompt').style.display = 'none';
+  document.getElementById('actor-result-card').style.display = 'none';
+
+  // Extract handle from URL and check if actor is already known
+  const handle = extractHandle(url);
+  if (handle) {
+    const actors = getActors();
+    const key = actorKey(handle);
+    if (actors[key]) {
+      // Actor already known — show their card immediately
+      const card = document.getElementById('actor-result-card');
+      card.style.display = 'block';
+      renderActorCard(document.getElementById('actor-result-body'), actors[key]);
+    } else {
+      // Actor unknown — prompt user
+      showActorPrompt(handle, url);
+    }
+  }
+
   const pct = (typeof d.overall.score === 'number' && !isNaN(d.overall.score)) ? d.overall.score : 0;
   const color = alignmentColor(pct);
   const circle = document.getElementById('dial-circle');
@@ -1107,6 +1265,126 @@ function addEntity() {
 }
 
 // ─────────────────────────────────────────────
+// ACTOR RESEARCH
+// ─────────────────────────────────────────────
+let pendingActorHandle = null;
+let pendingActorUrl = null;
+
+function showActorPrompt(handle, url) {
+  pendingActorHandle = handle;
+  pendingActorUrl = url;
+  const prompt = document.getElementById('actor-prompt');
+  document.getElementById('actor-prompt-text').textContent =
+    `Actor "@${handle}" has not been profiled yet. Would you like to research this account now?`;
+  prompt.style.display = 'block';
+}
+
+function dismissActorPrompt() {
+  document.getElementById('actor-prompt').style.display = 'none';
+  pendingActorHandle = null;
+  pendingActorUrl = null;
+}
+
+async function researchActor() {
+  if (!pendingActorHandle) return;
+  const handle = pendingActorHandle;
+  document.getElementById('actor-prompt').style.display = 'none';
+  const card = document.getElementById('actor-result-card');
+  const body = document.getElementById('actor-result-body');
+  card.style.display = 'block';
+  body.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Researching actor — please wait...</div>';
+
+  const serverUrl = getServerUrl();
+  if (!serverUrl) {
+    body.innerHTML = '<div style="font-size:12px;color:var(--amber)">Server URL not configured.</div>';
+    return;
+  }
+
+  try {
+    const res = await fetch(serverUrl + '/research-actor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle, url: pendingActorUrl })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || 'Server error'); }
+    const data = await res.json();
+    const actor = data.actor;
+
+    // Cache actor
+    const actors = getActors();
+    actors[actorKey(handle)] = { ...actor, handle, ts: new Date().toISOString() };
+    saveActors(actors);
+
+    renderActorCard(body, actor);
+    toast('Actor profile saved.');
+  } catch(e) {
+    body.innerHTML = `<div style="font-size:12px;color:var(--amber)">Could not research actor: ${e.message}</div>`;
+  }
+  pendingActorHandle = null;
+}
+
+function renderActorCard(container, actor) {
+  container.innerHTML = `
+    <div style="margin-bottom:6px">
+      <div class="actor-name">${escHtml(actor.name || actor.handle || 'Unknown')}</div>
+      ${actor.location ? `<div class="actor-location">📍 ${escHtml(actor.location)}</div>` : ''}
+    </div>
+    <div class="actor-bio">${escHtml(actor.bio || 'No biographical information found.')}</div>
+    ${actor.handles && actor.handles.length > 0 ? `
+      <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Known accounts & websites</div>
+      <div class="actor-handles">${actor.handles.map(h => `<span class="actor-handle-tag">${escHtml(h)}</span>`).join('')}</div>
+    ` : ''}
+  `;
+}
+
+function renderActors() {
+  const actors = getActors();
+  const list = document.getElementById('actors-list');
+  const keys = Object.keys(actors);
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="no-actors">No actors profiled yet. Research an actor after analyzing a post.</div>';
+    return;
+  }
+  list.innerHTML = keys.map(k => {
+    const a = actors[k];
+    const d = a.ts ? new Date(a.ts) : null;
+    return `
+      <div class="actor-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="flex:1">
+            <div class="actor-name">${escHtml(a.name || a.handle)}</div>
+            <div class="actor-handle">@${escHtml(a.handle)}</div>
+            ${a.location ? `<div class="actor-location">📍 ${escHtml(a.location)}</div>` : ''}
+            <div class="actor-bio">${escHtml(a.bio || '')}</div>
+            ${a.handles && a.handles.length > 0 ? `
+              <div class="actor-handles" style="margin-top:8px">${a.handles.map(h => `<span class="actor-handle-tag">${escHtml(h)}</span>`).join('')}</div>
+            ` : ''}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            ${d ? `<div style="font-size:10px;color:var(--text3)">${d.toLocaleDateString()}</div>` : ''}
+            <button class="btn btn-sm btn-danger" style="margin-top:8px" onclick="deleteActor('${k}')">Delete</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function deleteActor(key) {
+  const actors = getActors();
+  delete actors[key];
+  saveActors(actors);
+  renderActors();
+  toast('Actor deleted.');
+}
+
+function clearActors() {
+  if (!confirm('Clear all actor profiles?')) return;
+  saveActors({});
+  renderActors();
+  toast('All actors cleared.');
+}
+
+// ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -1117,6 +1395,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('version-badge').textContent = 'v' + APP_VERSION;
   updateHistoryCount();
   updateScanCounter();
+  updateActorsCount();
 });
 </script>
 </body>
