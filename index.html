@@ -193,7 +193,8 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.6.2</div>
+      <div class="version-badge" id="version-badge">v1.7.0</div>
+      <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
       <div class="nav-label">Tools</div>
@@ -604,7 +605,7 @@ const DEFAULT_ENTITIES = [
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.6.2';
+const APP_VERSION = '1.7.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -635,6 +636,7 @@ function saveServerUrl() {
   const val = document.getElementById('server-url-input').value.trim().replace(/\/$/, '');
   localStorage.setItem('wbt_server_url', val);
   updateServerBar(val);
+  fetchServerVersion(val);
 }
 function updateServerBar(url) {
   const bar = document.getElementById('server-bar');
@@ -1233,7 +1235,22 @@ window.addEventListener('DOMContentLoaded', function() {
   updateHistoryCount();
   updateScanCounter();
   updateActorsCount();
+  fetchServerVersion(serverUrl);
 });
+
+function fetchServerVersion(serverUrl) {
+  const badge = document.getElementById('server-version-badge');
+  if (!serverUrl) { badge.textContent = 'srv: not connected'; return; }
+  fetch(serverUrl + '/')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      badge.textContent = 'srv v' + (data.version || '?');
+      badge.style.opacity = '1';
+    })
+    .catch(function() {
+      badge.textContent = 'srv: unreachable';
+    });
+}
 </script>
 </body>
 </html>
