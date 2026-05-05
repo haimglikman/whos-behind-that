@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.7.0
+- Server version badge added to sidebar below main version
+- Fetched live from server health check on load — always reflects what's actually deployed
+- Updates automatically when server URL changes
+
 ### v1.6.2 — bug fix
 - Rebuilt entire JavaScript section from scratch after cascading corruption from prior edits
 - Fixed: nav tabs not working, analyze button non-functional, version showing incorrectly
