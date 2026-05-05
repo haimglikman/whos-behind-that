@@ -1,5 +1,11 @@
 ## Changelog
 
+### v1.6.1 — bug fix
+- Removed DEMOS data object and runDemo() function (260 lines of dead code from v1.5.0)
+- Removed orphaned .demo-chip and .demo-label CSS styles
+- Fixed entity database badge hardcoded to "20" — now shows correct count of 50
+- Fixed wrong syntax in server file
+
 ### v1.6.0
 - Actor profiles: Claude researches social media actors via OSINT, cached by handle
 - Actors tab: browse, view, and delete all profiled actors
