@@ -193,7 +193,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.7.0</div>
+      <div class="version-badge" id="version-badge">v1.7.1</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -605,7 +605,7 @@ const DEFAULT_ENTITIES = [
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.7.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -624,7 +624,7 @@ function recordScan() {
   localStorage.setItem('wbt_scans', JSON.stringify(s));
   updateScanCounter();
 }
-function getServerUrl() { return localStorage.getItem('wbt_server_url') || ''; }
+function getServerUrl() { return localStorage.getItem('wbt_server_url') || 'https://whos-behind-that-server.onrender.com'; }
 function getActors() { try { return JSON.parse(localStorage.getItem('wbt_actors') || '{}'); } catch(e) { return {}; } }
 function saveActors(a) { localStorage.setItem('wbt_actors', JSON.stringify(a)); updateActorsCount(); }
 function updateActorsCount() {
