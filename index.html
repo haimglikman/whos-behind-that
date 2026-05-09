@@ -193,7 +193,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.7.1</div>
+      <div class="version-badge" id="version-badge">v1.7.2</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -605,7 +605,7 @@ const DEFAULT_ENTITIES = [
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.7.2';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -713,11 +713,14 @@ function pillClass(type) {
 }
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-function extractHandle(url) {
+function extractHandle(url, post) {
+  // X/Twitter: handle is in the URL
   let m = url.match(/(?:x\.com|twitter\.com)\/([^\/\?]+)/i);
   if (m && m[1] && !['i','home','search','explore'].includes(m[1])) return m[1];
-  m = url.match(/instagram\.com\/([^\/\?]+)/i);
-  if (m && m[1] && !['p','reel','stories','explore'].includes(m[1])) return m[1];
+  // Instagram/Facebook: handle is NOT in the post URL — use author from server response
+  if (post && post.authorHandle) return post.authorHandle;
+  if (post && post.author) return post.author;
+  // Facebook profile URLs: facebook.com/username
   m = url.match(/facebook\.com\/([^\/\?]+)/i);
   if (m && m[1] && !['photo','video','groups','pages','events','profile.php'].includes(m[1])) return m[1];
   return null;
@@ -843,6 +846,7 @@ function buildResult(analysis, post, entities) {
   const topName = matches.length > 0 ? matches[0].name : null;
   const topNames = matches.slice(0,2).map(function(m){ return m.name; }).join(' / ');
   return {
+    post: post,
     textAI: analysis.text_ai_score || 5,
     textNote: analysis.text_ai_reason || '',
     hasImage: false, imgAI: null, imgNote: 'Image analysis coming in a future version.',
@@ -871,7 +875,7 @@ function showResults(url, d) {
   document.getElementById('actor-prompt').style.display = 'none';
   document.getElementById('actor-result-card').style.display = 'none';
 
-  const handle = extractHandle(url);
+  const handle = extractHandle(url, d.post);
   if (handle) {
     const actors = getActors();
     const key = actorKey(handle);
