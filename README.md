@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.7.2 — bug fix
+- Fixed actor research prompt not appearing after analyzing Instagram posts
+- Instagram handle now extracted from server's oEmbed author_url, not the post URL
+
 ### v1.7.1 — bug fix
 - Hardcoded default server URL so app works out of the box on any device
 - Users no longer need to manually enter the server URL on first visit
