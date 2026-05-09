@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.7.3 — bug fix
+- Instagram/Facebook actor research now works: a handle input field appears
+  automatically when an Instagram or Facebook URL is detected
+- Actor research prompt now correctly triggers after analyzing Instagram posts
+
 ### v1.7.2 — bug fix
 - Fixed actor research prompt not appearing after analyzing Instagram posts
 - Instagram handle now extracted from server's oEmbed author_url, not the post URL
