@@ -193,7 +193,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.7.2</div>
+      <div class="version-badge" id="version-badge">v1.7.3</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -257,8 +257,12 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 
         <div class="url-box">
           <div class="url-row">
-            <input type="text" class="url-input" id="url-input" placeholder="https://x.com/username/status/1234567890" />
+            <input type="text" class="url-input" id="url-input" placeholder="https://x.com/username/status/1234567890" oninput="onUrlChange()" />
             <button class="btn btn-primary" onclick="startAnalysis()">Analyze</button>
+          </div>
+          <div id="actor-handle-row" style="display:none;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Instagram/Facebook post detected — enter the account handle for actor research (optional):</div>
+            <input type="text" class="url-input" id="manual-actor-handle" placeholder="@username" style="font-size:12px;margin-bottom:0" />
           </div>
           <div id="manual-text-fallback" style="display:none">
             <div style="font-size:11px;color:var(--amber);margin-bottom:6px">⚠ Could not fetch post text automatically. Paste it manually:</div>
@@ -605,7 +609,7 @@ const DEFAULT_ENTITIES = [
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.7.2';
+const APP_VERSION = '1.7.3';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -713,14 +717,23 @@ function pillClass(type) {
 }
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function onUrlChange() {
+  const url = document.getElementById('url-input').value.trim();
+  const isInstagramOrFacebook = /instagram\.com|facebook\.com|fb\.com/i.test(url);
+  document.getElementById('actor-handle-row').style.display = isInstagramOrFacebook ? 'block' : 'none';
+}
+
 function extractHandle(url, post) {
+  // Check if user manually provided a handle (for Instagram/Facebook)
+  const manualHandle = (document.getElementById('manual-actor-handle').value || '').trim().replace('@', '');
+  if (manualHandle) return manualHandle;
   // X/Twitter: handle is in the URL
   let m = url.match(/(?:x\.com|twitter\.com)\/([^\/\?]+)/i);
   if (m && m[1] && !['i','home','search','explore'].includes(m[1])) return m[1];
-  // Instagram/Facebook: handle is NOT in the post URL — use author from server response
+  // Use author from server response if available (Instagram oEmbed)
   if (post && post.authorHandle) return post.authorHandle;
   if (post && post.author) return post.author;
-  // Facebook profile URLs: facebook.com/username
+  // Facebook profile URLs
   m = url.match(/facebook\.com\/([^\/\?]+)/i);
   if (m && m[1] && !['photo','video','groups','pages','events','profile.php'].includes(m[1])) return m[1];
   return null;
@@ -744,6 +757,8 @@ function resetAnalysis() {
   document.getElementById('loader').classList.remove('active');
   document.getElementById('results').classList.remove('active');
   document.getElementById('url-input').value = '';
+  document.getElementById('manual-actor-handle').value = '';
+  document.getElementById('actor-handle-row').style.display = 'none';
   const pt = document.getElementById('post-text');
   if (pt) pt.value = '';
   document.getElementById('manual-text-fallback').style.display = 'none';
