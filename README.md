@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.7.1 — bug fix
+- Hardcoded default server URL so app works out of the box on any device
+- Users no longer need to manually enter the server URL on first visit
+
 ### v1.7.0
 - Server version badge added to sidebar below main version
 - Fetched live from server health check on load — always reflects what's actually deployed
