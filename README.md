@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.8.1 — bug fix
+- Fixed secondary alignment never showing: alignment field now mandatory in prompt
+- Fixed rival entities both appearing: added explicit rule that criticizing an entity does not count as alignment with them
+
 ### v1.8.0
 - Primary/secondary alignment split: primary = direct beneficiary, secondary = collateral beneficiary
 - Visual distinction: solid vs dashed border
