@@ -91,6 +91,9 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .score-num { font-size: 12px; font-family: var(--mono); font-weight: 500; width: 32px; text-align: right; }
 .card-note { font-size: 11px; color: var(--text2); line-height: 1.55; margin-top: 8px; }
 .match-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; }
+.match-item.secondary { background: var(--bg2); border-style: dashed; opacity: 0.85; }
+.alignment-section-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; padding: 6px 0 6px; margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+.alignment-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .match-item:last-child { margin-bottom: 0; }
 .match-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .match-name { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
@@ -193,7 +196,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.7.3</div>
+      <div class="version-badge" id="version-badge">v1.8.0</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -210,7 +213,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
       <button class="nav-item" id="nav-database" onclick="showPage('database',this)">
         <svg class="nav-icon" viewBox="0 0 15 15" fill="none"><ellipse cx="7.5" cy="4" rx="5.5" ry="2" stroke="currentColor" stroke-width="1.3"/><path d="M2 4v3.5c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V4" stroke="currentColor" stroke-width="1.3"/><path d="M2 7.5V11c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V7.5" stroke="currentColor" stroke-width="1.3"/></svg>
         Entity database
-        <span class="badge-count" id="db-count">50</span>
+        <span class="badge-count" id="db-count">56</span>
       </button>
       <button class="nav-item" id="nav-actors" onclick="showPage('actors',this)">
         <svg class="nav-icon" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 13c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="4" r="1.5" fill="currentColor" opacity=".4"/><path d="M11.5 4h1M12 3.5v1" stroke="currentColor" stroke-width=".9" stroke-linecap="round"/></svg>
@@ -317,7 +320,8 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           </div>
           <div class="analysis-card" style="margin-bottom:12px">
             <div class="card-label">Narrative alignment — entities at 85%+ fit</div>
-            <div id="r-matches"></div>
+            <div id="r-primary-matches"></div>
+            <div id="r-secondary-matches"></div>
           </div>
           <div class="analysis-card">
             <div class="card-label">Account / user background check</div>
@@ -402,8 +406,18 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           <h2>Changelog</h2>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v1.6.1</div>
-            <div class="changelog-date">Current version — bug fix</div>
+            <div class="changelog-ver">v1.8.0</div>
+            <div class="changelog-date">Current version</div>
+            <ul>
+              <li><strong>Primary / secondary alignment:</strong> Entity matches now split into two groups. Primary = entity the post was likely written to serve directly. Secondary = indirect collateral beneficiary. Max 3 primary, 2 secondary.</li>
+              <li><strong>Visual distinction:</strong> Primary matches shown with solid border; secondary matches shown with dashed border and muted styling so the two groups are immediately distinguishable.</li>
+              <li><strong>New entities (50 → 56):</strong> Added Israeli Opposition Bloc (Lapid/Yesh Atid), Israeli Protest Movement, Israeli Hostage Families Forum, Avigdor Lieberman/Yisrael Beiteinu, Israeli Left/Peace Camp (Meretz/Peace Now), Arab Citizens of Israel/Joint List.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v1.7.3 — v1.6.1</div>
+            <div class="changelog-date">Previous versions</div>
             <ul>
               <li><strong>Removed dead code:</strong> Deleted the DEMOS data object (260 lines) and <code>runDemo()</code> function left over from before demos were removed in v1.5.0.</li>
               <li><strong>Removed orphaned CSS:</strong> Deleted <code>.demo-chip</code> and <code>.demo-label</code> styles that were no longer used.</li>
@@ -603,13 +617,26 @@ const DEFAULT_ENTITIES = [
   { id:47, name:"Israeli Settler Movement", type:"Int'l organization", narrative:"Jewish people have a biblical and historical right to settle all of the Land of Israel, including the West Bank (Judea and Samaria). Settlement expansion is a religious obligation and a security necessity.", interest:"Permanent Israeli control over the West Bank; preventing any Palestinian state; using the Gaza war as an opportunity to expand settlements and apply Israeli law to the West Bank.", mo:"Settler violence against Palestinians; building new outposts; lobbying Ben Gvir and Smotrich; blocking IDF action against settlers; creating facts on the ground that make a two-state solution physically impossible.", comments:"Settler violence in the West Bank has increased dramatically since October 7. Several settler leaders have openly called for resettling Gaza. The U.S. and EU have sanctioned specific settlers." },
   { id:48, name:"Palestinian Diaspora / BDS Movement", type:"Int'l organization", narrative:"Calls for boycott, divestment, and sanctions against Israel until it ends occupation, grants equal rights to Arab citizens, and allows Palestinian refugee return. Frames this as non-violent pressure strategy.", interest:"Building international pressure on Israel through economic and cultural isolation; keeping the Palestinian cause on the global agenda; creating political costs for governments that support Israel unconditionally.", mo:"Campus organizing; corporate divestment campaigns; cultural boycotts (artists refusing to perform in Israel); targeting Israeli exports; legal campaigns in various countries.", comments:"BDS has achieved some corporate divestments and cultural boycotts but has been countered by anti-BDS legislation in many U.S. states and European countries. Its 'right of return' demand is rejected by most Israeli political parties as incompatible with a Jewish state." },
   { id:49, name:"Evangelical Christian Zionists (U.S.)", type:"Int'l organization", narrative:"Israel's existence and the Jewish people's return to their homeland are fulfillment of biblical prophecy. Christians have a religious obligation to support Israel. Oppose any division of Jerusalem or Israeli land.", interest:"Ensuring U.S. political and military support for Israel remains unconditional; blocking any peace deal that divides Jerusalem; supporting Israeli sovereignty over biblical lands including the West Bank.", mo:"Political lobbying through organizations like Christians United for Israel (CUFI); electoral mobilization of evangelical voters; fundraising for Israeli settlements; pro-Israel media.", comments:"Evangelical Christians are one of the most reliably pro-Israel constituencies in the U.S. Their support is a key factor in Republican Party's near-unconditional backing of Israel." },
-  { id:50, name:"Global Jihadist Networks (Al-Qaeda / ISIS affiliates)", type:"Terror organization", narrative:"Frame the Israeli-Palestinian conflict as part of a cosmic war between Islam and the West/Zionism. Use Gaza civilian casualties as recruitment material and justification for attacks globally.", interest:"Using the conflict to recruit, radicalize, and incite attacks in Western countries and against Israel. Gaza imagery serves as the most powerful radicalization content available.", mo:"Online propaganda using Gaza imagery; inciting 'lone wolf' attacks in Western cities; recruitment messaging framing Gaza as proof that the West wages war on Islam; attempting to exploit conflict to expand influence at Hamas's expense.", comments:"ISIS and Al-Qaeda actually have complex relationships with Hamas — both have criticized Hamas for being too 'nationalist' rather than sufficiently Islamist. But they exploit the conflict heavily for their own purposes." }
+  { id:50, name:"Global Jihadist Networks (Al-Qaeda / ISIS affiliates)", type:"Terror organization", narrative:"Frame the Israeli-Palestinian conflict as part of a cosmic war between Islam and the West/Zionism. Use Gaza civilian casualties as recruitment material and justification for attacks globally.", interest:"Using the conflict to recruit, radicalize, and incite attacks in Western countries and against Israel. Gaza imagery serves as the most powerful radicalization content available.", mo:"Online propaganda using Gaza imagery; inciting 'lone wolf' attacks in Western cities; recruitment messaging framing Gaza as proof that the West wages war on Islam; attempting to exploit conflict to expand influence at Hamas's expense.", comments:"ISIS and Al-Qaeda actually have complex relationships with Hamas — both have criticized Hamas for being too 'nationalist' rather than sufficiently Islamist. But they exploit the conflict heavily for their own purposes." },
+
+  // ── ISRAELI DOMESTIC OPPOSITION ──
+  { id:51, name:"Israeli Opposition Bloc (Lapid / Yesh Atid)", type:"Politician", narrative:"Advocates for a hostage deal as the top priority, a credible post-war governance plan for Gaza, and a return to a path toward a two-state solution. Frames Netanyahu's continued leadership as an obstacle to both security and democratic norms. Uses 'Bibiism' (ביביזם) as a term for the culture of blind loyalty to Netanyahu above national interest.", interest:"Replacing Netanyahu as Prime Minister; forcing early elections; positioning Lapid as the responsible centrist alternative who can restore Israel's international standing and secure the hostages. Benefits from any narrative that delegitimizes Netanyahu personally or his coalition's decision-making.", mo:"Parliamentary opposition; weekly media appearances attacking government war management; emphasizing hostage families' demands; highlighting coalition dependence on Ben Gvir and Smotrich; international lobbying to signal Israel has a credible democratic alternative.", comments:"Yair Lapid leads the largest opposition party. The term 'Bibiism' (ביביזם) has become a widely used pejorative in Israeli discourse for uncritical Netanyahu loyalty, associated with the opposition's framing of the conflict between democratic values and personal political survival." },
+
+  { id:52, name:"Israeli Protest Movement", type:"Int'l organization", narrative:"The ongoing mass protest movement calling for a hostage deal, early elections, and Netanyahu's resignation. Frames itself as defending Israeli democracy against a government that prioritizes political survival over the hostages and national security.", interest:"Forcing elections and removing Netanyahu from power. The movement's core demand has shifted from judicial overhaul opposition (2023) to hostage deal priority (post-October 7). Benefits from any content that highlights government failures, hostage suffering, or coalition extremism.", mo:"Weekly mass demonstrations in Tel Aviv and Jerusalem; blocking roads; protests outside the Knesset and Netanyahu's residence; international media engagement; coordination with hostage families forum.", comments:"The protest movement is one of the largest sustained civil society mobilizations in Israeli history. It draws from a broad secular, centrist, and left-wing base. Its messaging heavily emphasizes personal accountability for October 7 failures." },
+
+  { id:53, name:"Israeli Hostage Families Forum", type:"Int'l organization", narrative:"Represents families of the hostages taken on October 7. Demands an immediate deal to secure all hostages' return, framing this as the singular moral and strategic priority above all other war aims. Explicitly critical of Netanyahu when deal negotiations stall.", interest:"Securing the return of their family members through a negotiated deal. Has become a distinct political actor that sometimes clashes with the government, the military, and even the broader protest movement when their singular focus on the deal diverges from other agendas.", mo:"Press conferences; international lobbying (Washington, European capitals); public emotional appeals; meeting with foreign leaders; coordinating with protest movement; pressuring the war cabinet directly.", comments:"The Hostage Families Forum has enormous moral authority in Israeli society and internationally. Their public statements criticizing Netanyahu for prioritizing coalition survival over the hostages have been among the most politically damaging attacks on his government." },
+
+  { id:54, name:"Avigdor Lieberman / Yisrael Beiteinu", type:"Politician", narrative:"Fiercely anti-Netanyahu despite being a right-wing, security-hawkish politician. Advocates for dismantling Hamas completely, opposing ultra-Orthodox draft exemptions, and secular governance. Frames Netanyahu's reliance on Ben Gvir and Smotrich as a national security threat.", interest:"Replacing Netanyahu with a secular right-wing government that excludes the ultra-Orthodox and religious nationalist parties. Lieberman's base is largely Russian-Israeli secular voters who are hawkish on security but hostile to religious coercion and Haredi political power.", mo:"Sharp parliamentary and media attacks on Netanyahu; exploiting the contradiction between Netanyahu's security-hawk image and his dependence on coalition partners who block military draft equality; positioning as the 'real right' versus what he calls Netanyahu's corrupt populism.", comments:"Lieberman is a uniquely awkward figure — right-wing on security, left-wing on religion and state, and personally consumed by hatred of Netanyahu after years as his coalition partner. His voters are among the most skeptical of any deal with Hamas." },
+
+  { id:55, name:"Israeli Left / Peace Camp (Meretz / Peace Now)", type:"Politician", narrative:"Advocates for an immediate ceasefire, end to occupation, two-state solution, and Israeli accountability for civilian casualties in Gaza. Frames the war as an opportunity to end the occupation rather than entrench it. Supports ICC jurisdiction over Israeli officials.", interest:"Ending the occupation and achieving a negotiated two-state solution. Politically marginalized since October 7 but representing a consistent ideological position that benefits from any narrative highlighting Palestinian civilian suffering, Israeli military excesses, or the futility of military solutions.", mo:"Public advocacy; international media; joint Israeli-Palestinian civil society activities; supporting B'Tselem and human rights documentation; backing ICC proceedings; demonstrating against both the war and the occupation.", comments:"Meretz fell below the electoral threshold in the 2022 elections. The Israeli left is at its weakest point in decades following October 7, as the attack discredited the 'partner for peace' argument in mainstream Israeli discourse. But it remains a coherent voice internationally." },
+
+  { id:56, name:"Arab Citizens of Israel / Joint List", type:"Politician", narrative:"Represents Arab Palestinian citizens of Israel (approximately 20% of the population). Calls for ceasefire, end to occupation, equal civil rights within Israel, and accountability for civilian deaths in Gaza. Frames the war as revealing the systemic discrimination faced by Arab citizens.", interest:"Protecting the rights and political representation of Arab citizens of Israel; preventing the war from being used to justify further marginalization; maintaining political relevance in the Knesset despite enormous social pressure following October 7.", mo:"Parliamentary opposition; public statements; international outreach; documenting anti-Arab discrimination within Israel during wartime; coordinating with Palestinian civil society.", comments:"Arab citizens of Israel faced significant social hostility after October 7. Several Arab politicians were temporarily suspended from the Knesset. Their political voice has been severely constrained by the wartime atmosphere but remains a distinct and important domestic constituency." }
 ];
 
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.7.3';
+const APP_VERSION = '1.8.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -853,13 +880,22 @@ function buildResult(analysis, post, entities) {
     return Object.assign({}, m, {
       pct: (typeof m.pct === 'number' && !isNaN(m.pct))
         ? m.pct
-        : Math.round(((m.interest||0)*0.55) + ((m.mo||0)*0.35) + ((m.narrative||0)*0.10))
+        : Math.round(((m.interest||0)*0.55) + ((m.mo||0)*0.35) + ((m.narrative||0)*0.10)),
+      secondary: m.alignment === 'secondary'
     });
   }).sort(function(a,b){ return b.pct - a.pct; });
-  const matches = rawMatches.filter(function(m){ return m.pct >= 85; });
-  const topMatch = matches.length > 0 ? matches[0].pct : 0;
-  const topName = matches.length > 0 ? matches[0].name : null;
-  const topNames = matches.slice(0,2).map(function(m){ return m.name; }).join(' / ');
+
+  // Filter to 85%+ and enforce max limits: 3 primary, 2 secondary
+  const allAboveThreshold = rawMatches.filter(function(m){ return m.pct >= 85; });
+  const primaryMatches = allAboveThreshold.filter(function(m){ return !m.secondary; }).slice(0,3);
+  const secondaryMatches = allAboveThreshold.filter(function(m){ return m.secondary; }).slice(0,2);
+  const matches = primaryMatches.concat(secondaryMatches);
+
+  const topPrimary = primaryMatches.length > 0 ? primaryMatches[0] : (matches.length > 0 ? matches[0] : null);
+  const topMatch = topPrimary ? topPrimary.pct : 0;
+  const topName = topPrimary ? topPrimary.name : null;
+  const topNames = primaryMatches.slice(0,2).map(function(m){ return m.name; }).join(' / ');
+
   return {
     post: post,
     textAI: analysis.text_ai_score || 5,
@@ -875,7 +911,7 @@ function buildResult(analysis, post, entities) {
       score: topMatch,
       label: topNames || 'No strong alignment detected',
       desc: matches.length > 0
-        ? 'Claude AI found ' + matches.length + ' entity match' + (matches.length>1?'es':'') + ' above 85% threshold across ' + entities.length + ' entities. Strongest alignment: ' + topName + ' at ' + topMatch + '%.'
+        ? 'Claude AI found ' + primaryMatches.length + ' primary and ' + secondaryMatches.length + ' secondary alignment' + (secondaryMatches.length !== 1 ? 's' : '') + ' above 85% across ' + entities.length + ' entities. Strongest: ' + (topName || '—') + ' at ' + topMatch + '%.'
         : 'Claude AI found no entity alignment above 85% across ' + entities.length + ' entities. Post does not strongly serve any tracked entity\'s agenda.'
     }
   };
@@ -934,34 +970,46 @@ function showResults(url, d) {
     document.getElementById('img-absent').textContent = d.imgNote || 'No image detected in this post.';
   }
 
-  const matchEl = document.getElementById('r-matches');
-  if (!d.matches || d.matches.length === 0) {
-    matchEl.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No entity alignment above 85% threshold. Post does not strongly serve any tracked entity\'s agenda.</div>';
+  const primaryEl = document.getElementById('r-primary-matches');
+  const secondaryEl = document.getElementById('r-secondary-matches');
+  const primary = (d.matches || []).filter(function(m){ return !m.secondary; });
+  const secondary = (d.matches || []).filter(function(m){ return m.secondary; });
+
+  function renderMatchItem(m, isSecondary) {
+    const c = alignmentColor(m.pct);
+    const bg = alignmentBg(m.pct);
+    return '<div class="match-item' + (isSecondary ? ' secondary' : '') + '" style="border-color:' + c + '33">' +
+      '<div class="match-top">' +
+        '<span class="match-name">' + escHtml(m.name) + '</span>' +
+        '<span class="match-pct" style="color:' + c + '">' + m.pct + '%</span>' +
+      '</div>' +
+      '<div class="match-bars">' +
+        [['Public narrative (10%)', m.narrative], ['Hidden interest (55%)', m.interest], ['Modus operandi (35%)', m.mo]].map(function(pair) {
+          return '<div class="mini-bar-row">' +
+            '<span class="mini-label">' + pair[0] + '</span>' +
+            '<div class="mini-wrap"><div class="mini-fill" style="width:' + pair[1] + '%;background:' + alignmentColor(pair[1]) + '"></div></div>' +
+            '<span class="mini-val">' + pair[1] + '%</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+      '<div class="match-why" style="margin-bottom:8px">' + escHtml(m.why||'') + '</div>' +
+      (m.missing ? '<div style="background:' + bg + ';border-radius:var(--radius-sm);padding:8px 10px;border-left:2px solid ' + c + '">' +
+        '<div style="font-size:9px;font-weight:600;color:' + c + ';text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">What this post leaves out</div>' +
+        '<div style="font-size:11px;color:var(--text2);line-height:1.55">' + escHtml(m.missing) + '</div>' +
+      '</div>' : '') +
+    '</div>';
+  }
+
+  if (primary.length === 0 && secondary.length === 0) {
+    primaryEl.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No entity alignment above 85% threshold. Post does not strongly serve any tracked entity\'s agenda.</div>';
+    secondaryEl.innerHTML = '';
   } else {
-    matchEl.innerHTML = d.matches.map(function(m) {
-      const c = alignmentColor(m.pct);
-      const bg = alignmentBg(m.pct);
-      return '<div class="match-item" style="border-color:' + c + '22">' +
-        '<div class="match-top">' +
-          '<span class="match-name">' + escHtml(m.name) + '</span>' +
-          '<span class="match-pct" style="color:' + c + '">' + m.pct + '%</span>' +
-        '</div>' +
-        '<div class="match-bars">' +
-          [['Public narrative (10%)', m.narrative], ['Hidden interest (55%)', m.interest], ['Modus operandi (35%)', m.mo]].map(function(pair) {
-            return '<div class="mini-bar-row">' +
-              '<span class="mini-label">' + pair[0] + '</span>' +
-              '<div class="mini-wrap"><div class="mini-fill" style="width:' + pair[1] + '%;background:' + alignmentColor(pair[1]) + '"></div></div>' +
-              '<span class="mini-val">' + pair[1] + '%</span>' +
-            '</div>';
-          }).join('') +
-        '</div>' +
-        '<div class="match-why" style="margin-bottom:8px">' + escHtml(m.why||'') + '</div>' +
-        (m.missing ? '<div style="background:' + bg + ';border-radius:var(--radius-sm);padding:8px 10px;border-left:2px solid ' + c + '">' +
-          '<div style="font-size:9px;font-weight:600;color:' + c + ';text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">What this post leaves out</div>' +
-          '<div style="font-size:11px;color:var(--text2);line-height:1.55">' + escHtml(m.missing) + '</div>' +
-        '</div>' : '') +
-      '</div>';
-    }).join('');
+    primaryEl.innerHTML = primary.length > 0
+      ? '<div class="alignment-section-label" style="color:var(--text2)">Primary alignment</div>' + primary.map(function(m){ return renderMatchItem(m, false); }).join('')
+      : '<div style="font-size:12px;color:var(--text3);padding:8px 0">No primary alignment found.</div>';
+    secondaryEl.innerHTML = secondary.length > 0
+      ? '<div class="alignment-section-label" style="color:var(--text3);margin-top:8px">Secondary alignment — indirect beneficiaries</div>' + secondary.map(function(m){ return renderMatchItem(m, true); }).join('')
+      : '';
   }
 
   document.getElementById('r-created').textContent = d.created;
