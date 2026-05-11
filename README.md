@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.8.0
+- Primary/secondary alignment split: primary = direct beneficiary, secondary = collateral beneficiary
+- Visual distinction: solid vs dashed border
+- New entities: Israeli Opposition Bloc, Protest Movement, Hostage Families Forum, Lieberman, Israeli Left, Arab Citizens of Israel
+
 ### v1.7.3 — bug fix
 - Instagram/Facebook actor research now works: a handle input field appears
   automatically when an Instagram or Facebook URL is detected
