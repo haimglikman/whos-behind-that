@@ -196,7 +196,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.8.0</div>
+      <div class="version-badge" id="version-badge">v1.8.1</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -636,7 +636,7 @@ const DEFAULT_ENTITIES = [
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.8.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -881,7 +881,7 @@ function buildResult(analysis, post, entities) {
       pct: (typeof m.pct === 'number' && !isNaN(m.pct))
         ? m.pct
         : Math.round(((m.interest||0)*0.55) + ((m.mo||0)*0.35) + ((m.narrative||0)*0.10)),
-      secondary: m.alignment === 'secondary'
+      secondary: m.alignment === 'secondary' || m.is_secondary === true
     });
   }).sort(function(a,b){ return b.pct - a.pct; });
 
