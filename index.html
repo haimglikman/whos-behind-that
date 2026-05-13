@@ -153,6 +153,11 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .history-tag { font-size: 10px; padding: 2px 7px; background: var(--bg3); border: 1px solid var(--border); border-radius: 99px; color: var(--text2); }
 .history-type { font-size: 10px; padding: 2px 7px; border-radius: 99px; }
 .no-history { font-size: 13px; color: var(--text3); padding: 32px; text-align: center; }
+.scan-id { font-family: var(--mono); font-size: 9px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 99px; border: 1px solid var(--border); }
+.scan-version { font-size: 9px; color: var(--text3); font-family: var(--mono); }
+.comment-field { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; color: var(--text); font-size: 11px; font-family: var(--sans); resize: none; outline: none; min-height: 38px; margin-top: 8px; transition: border-color 0.2s; line-height: 1.5; }
+.comment-field:focus { border-color: var(--blue); }
+.comment-field::placeholder { color: var(--text3); }
 /* Toast */
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 16px; font-size: 12px; color: var(--text); z-index: 1000; opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateY(0); }
@@ -196,7 +201,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.8.1</div>
+      <div class="version-badge" id="version-badge">v1.9.0</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -355,8 +360,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <!-- ── HISTORY PAGE ── -->
     <div id="page-history" class="page">
       <div class="page-header">
-        <div><h1>Post history</h1><p>All posts you have analyzed — saved locally in your browser</p></div>
-        <button class="btn btn-sm btn-danger" onclick="clearHistory()">Clear all</button>
+        <div><h1>Post history</h1><p>All posts analyzed — shared across all users</p></div>
       </div>
       <div style="padding:24px 36px">
         <div id="history-list"></div>
@@ -532,6 +536,12 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           <div class="step-card"><div class="step-num">6</div><div class="step-body"><h4>Add your Anthropic API key</h4><p>In Render, go to your service → <strong>Environment</strong> → Add variable: <code>ANTHROPIC_API_KEY</code> = your <code>sk-ant-...</code> key. Click Save — Render will redeploy automatically.</p></div></div>
           <div class="step-card"><div class="step-num">7</div><div class="step-body"><h4>Connect the app to your server</h4><p>Copy your Render service URL (e.g. <code>https://whos-behind-that-server.onrender.com</code>). Paste it into the server URL field at the top of the Analyze tab. It turns green when connected.</p></div></div>
           <div class="step-card"><div class="step-num">8</div><div class="step-body"><h4>Share the app</h4><p>Send anyone your GitHub Pages URL. They just paste a post URL and click Analyze — no setup, no API keys needed on their end.</p></div></div>
+
+          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">Part 3 — Shared history (PostgreSQL)</div>
+          <div class="step-card"><div class="step-num">9</div><div class="step-body"><h4>Create a PostgreSQL database on Render</h4><p>In your Render dashboard, click <strong>New → PostgreSQL</strong>. Name it <code>whos-behind-that-db</code>. Select the <strong>Free</strong> plan. Click <strong>Create Database</strong>.</p></div></div>
+          <div class="step-card"><div class="step-num">10</div><div class="step-body"><h4>Connect the database to your server</h4><p>In your PostgreSQL instance, go to <strong>Connections</strong> and copy the <strong>Internal Database URL</strong>. Go to your <code>whos-behind-that-server</code> web service → <strong>Environment</strong> → Add variable: <code>DATABASE_URL</code> = the URL you just copied. Save — Render will redeploy.</p></div></div>
+          <div class="step-card"><div class="step-num">11</div><div class="step-body"><h4>Update package.json</h4><p>Upload the new <code>package.json</code> to your <code>whos-behind-that-server</code> GitHub repo — it now includes the <code>pg</code> database driver. The table is created automatically on first server start.</p></div></div>
+          <div class="step-card"><div class="step-num">12</div><div class="step-body"><h4>Verify</h4><p>Visit your Render server URL in a browser. You should see <code>"db": true</code> in the response JSON, confirming the database is connected. All scans will now be shared across all users.</p></div></div>
         </div>
       </div>
     </div>
@@ -636,7 +646,7 @@ const DEFAULT_ENTITIES = [
 // ─────────────────────────────────────────────
 // VERSION
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.8.1';
+const APP_VERSION = '1.9.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -709,7 +719,7 @@ function showPage(name, el) {
   document.getElementById('page-' + name).classList.add('active');
   if (el) el.classList.add('active');
   if (name === 'database') renderDB();
-  if (name === 'history') renderHistory();
+  if (name === 'history') { renderHistory(); syncHistoryFromServer(); }
   if (name === 'actors') renderActors();
 }
 
@@ -843,7 +853,8 @@ async function analyzeWithManualText() {
     advance(3); await delay(300); advance(4); await delay(300); advance(5); await delay(200);
     const result = buildResult(analysis, {text: postText}, entities);
     showResults(url, result);
-    saveToHistory(url, postText, result);
+    const srvVer = await fetchSrvVersion(serverUrl);
+    await saveToHistory(url, postText, result, srvVer);
     recordScan();
   } catch(e) {
     document.getElementById('loader').classList.remove('active');
@@ -871,7 +882,8 @@ async function performServerAnalysis(url, serverUrl) {
   const data = await res.json();
   const result = buildResult(data.analysis, data.post, entities);
   showResults(url, result);
-  saveToHistory(url, (data.post && data.post.text) || '', result);
+  const srvVer = await fetchSrvVersion(serverUrl);
+  await saveToHistory(url, (data.post && data.post.text) || '', result, srvVer);
   recordScan();
 }
 
@@ -1022,12 +1034,41 @@ function showResults(url, d) {
 }
 
 // ─────────────────────────────────────────────
-// HISTORY
+// HISTORY — shared via server DB + local cache
 // ─────────────────────────────────────────────
-function saveToHistory(url, postText, result) {
+
+// Generate scan ID: WBT-{date}-{appVer}-{srvVer}-{random}
+function generateScanId(appVer, srvVer) {
+  const now = new Date();
+  const date = now.getFullYear().toString() +
+    String(now.getMonth()+1).padStart(2,'0') +
+    String(now.getDate()).padStart(2,'0');
+  const random = Math.random().toString(36).substring(2,6).toUpperCase();
+  const av = (appVer||'?').replace(/\./g,'');
+  const sv = (srvVer||'?').replace(/\./g,'');
+  return 'WBT-' + date + '-' + av + '-' + sv + '-' + random;
+}
+
+// Migrate legacy localStorage entries to add missing fields
+function migrateLocalHistory() {
   const h = getHistory();
+  let changed = false;
+  h.forEach(function(e) {
+    if (!e.scanId) { e.scanId = 'WBT-legacy-' + String(e.id||Date.now()); changed = true; }
+    if (!e.appVersion) { e.appVersion = '≤v1.8.1'; changed = true; }
+    if (!e.serverVersion) { e.serverVersion = '≤v1.4.1'; changed = true; }
+    if (e.comment === undefined) { e.comment = ''; changed = true; }
+  });
+  if (changed) saveHistory(h);
+}
+
+async function saveToHistory(url, postText, result, srvVersion) {
+  const serverUrl = getServerUrl();
+  const srvVer = srvVersion || (serverUrl ? await fetchSrvVersion(serverUrl) : '?');
+  const scanId = generateScanId(APP_VERSION, srvVer);
   const entry = {
     id: Date.now(),
+    scanId: scanId,
     ts: new Date().toISOString(),
     url: url,
     postText: (postText||'').slice(0, 500),
@@ -1036,11 +1077,96 @@ function saveToHistory(url, postText, result) {
     topMatches: (result.matches||[]).slice(0,3).map(function(m){ return m.name; }),
     textAI: result.textAI,
     hasImage: result.hasImage,
+    appVersion: APP_VERSION,
+    serverVersion: srvVer,
+    comment: '',
     fullResult: result
   };
+  // Save to localStorage cache
+  const h = getHistory();
   h.unshift(entry);
-  if (h.length > 200) h.splice(200);
+  if (h.length > 500) h.splice(500);
   saveHistory(h);
+  // Save to shared server DB
+  if (serverUrl) {
+    fetch(serverUrl + '/history/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    }).catch(function(e){ console.warn('History save failed:', e.message); });
+  }
+  return entry;
+}
+
+let _cachedSrvVersion = null;
+async function fetchSrvVersion(serverUrl) {
+  if (_cachedSrvVersion) return _cachedSrvVersion;
+  try {
+    const r = await fetch(serverUrl + '/');
+    const d = await r.json();
+    _cachedSrvVersion = d.version || '?';
+    return _cachedSrvVersion;
+  } catch(e) { return '?'; }
+}
+
+async function syncHistoryFromServer() {
+  const serverUrl = getServerUrl();
+  if (!serverUrl) return;
+  try {
+    const r = await fetch(serverUrl + '/history/list');
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data.scans || !data.scans.length) return;
+    // Merge server scans into localStorage — server is source of truth
+    const localById = {};
+    const local = getHistory();
+    local.forEach(function(e){ localById[e.scanId || e.id] = e; });
+    data.scans.forEach(function(s) {
+      // Map server fields to local format
+      const existing = localById[s.id];
+      if (existing) {
+        // Update comment from server (source of truth)
+        existing.comment = s.comment || existing.comment || '';
+      } else {
+        localById[s.id] = {
+          id: new Date(s.ts).getTime(),
+          scanId: s.id,
+          ts: s.ts,
+          url: s.url,
+          postText: s.postText || '',
+          overallScore: s.overallScore || 0,
+          overallLabel: s.overallLabel || '',
+          topMatches: s.topMatches || [],
+          textAI: s.textAI || 5,
+          hasImage: s.hasImage || false,
+          appVersion: s.appVersion || '?',
+          serverVersion: s.serverVersion || '?',
+          comment: s.comment || '',
+          fullResult: s.fullResult || null
+        };
+      }
+    });
+    const merged = Object.values(localById).sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+    saveHistory(merged);
+    renderHistory();
+    updateHistoryCount();
+  } catch(e) { console.warn('History sync failed:', e.message); }
+}
+
+async function saveComment(scanId, comment) {
+  const serverUrl = getServerUrl();
+  // Update locally first
+  const h = getHistory();
+  const entry = h.find(function(e){ return e.scanId === scanId || String(e.id) === String(scanId); });
+  if (entry) { entry.comment = comment; saveHistory(h); }
+  // Sync to server
+  if (serverUrl) {
+    fetch(serverUrl + '/history/comment', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: scanId, comment: comment })
+    }).catch(function(e){ console.warn('Comment save failed:', e.message); });
+  }
 }
 
 function openHistoryEntry(id) {
@@ -1068,8 +1194,13 @@ function renderHistory() {
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const color = alignmentColor(e.overallScore);
     const hasFullResult = !!e.fullResult;
-    return '<div class="history-item" onclick="openHistoryEntry(' + e.id + ')" style="cursor:pointer">' +
-      '<div class="history-top">' +
+    const scanId = e.scanId || ('WBT-legacy-' + e.id);
+    return '<div class="history-item">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">' +
+        '<span class="scan-id">' + escHtml(scanId) + '</span>' +
+        '<span class="scan-version">' + escHtml(e.appVersion||'?') + ' / srv ' + escHtml(e.serverVersion||'?') + '</span>' +
+      '</div>' +
+      '<div class="history-top" style="cursor:pointer" onclick="openHistoryEntry(' + e.id + ')">' +
         '<span class="history-url">' + escHtml(e.url) + '</span>' +
         '<div style="display:flex;align-items:center;gap:8px">' +
           '<span class="history-score" style="color:' + color + '">' + e.overallScore + '%</span>' +
@@ -1077,23 +1208,17 @@ function renderHistory() {
         '</div>' +
       '</div>' +
       '<div class="history-time">' + dateStr + '</div>' +
-      (e.postText ? '<div style="font-size:11px;color:var(--text3);margin-top:5px;line-height:1.5">"' + escHtml(e.postText.slice(0,140)) + (e.postText.length>140?'…':'') + '"</div>' : '') +
+      (e.postText ? '<div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5">"' + escHtml(e.postText.slice(0,140)) + (e.postText.length>140?'…':'') + '"</div>' : '') +
       '<div class="history-tags" style="margin-top:6px">' +
         '<span class="history-tag" style="color:' + color + ';border-color:' + color + '33">' + escHtml(e.overallLabel) + '</span>' +
         (e.topMatches||[]).map(function(m){ return '<span class="history-tag">' + escHtml(m) + '</span>'; }).join('') +
         (e.hasImage ? '<span class="history-tag">has image</span>' : '') +
-        (hasFullResult ? '<span class="history-tag" style="margin-left:auto;color:var(--text3)">view details →</span>' : '') +
       '</div>' +
+      '<textarea class="comment-field" placeholder="Add a comment..." onchange="saveComment(\'' + escHtml(scanId) + '\', this.value)">' + escHtml(e.comment||'') + '</textarea>' +
     '</div>';
   }).join('');
 }
 
-function clearHistory() {
-  if (!confirm('Clear all scan history?')) return;
-  saveHistory([]);
-  renderHistory();
-  toast('History cleared.');
-}
 
 // ─────────────────────────────────────────────
 // DATABASE EDITOR
@@ -1303,6 +1428,7 @@ window.addEventListener('DOMContentLoaded', function() {
   updateScanCounter();
   updateActorsCount();
   fetchServerVersion(serverUrl);
+  migrateLocalHistory(); // add scanId, versions, comment to legacy entries
 });
 
 function fetchServerVersion(serverUrl) {
