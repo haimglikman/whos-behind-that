@@ -1,5 +1,14 @@
 ## Changelog
 
+### v1.9.0
+- Shared history: scans now stored in PostgreSQL and visible to all users
+- Scan IDs: every scan gets a unique ID in format WBT-{date}-{appVer}-{srvVer}-{random}
+- Version tracking: app and server version logged per scan
+- Comments field: free-text comment on every scan, editable, server-synced
+- Retroactive migration: existing localStorage scans get IDs, version labels, and empty comment fields
+- Removed "Clear all" from history tab
+- PostgreSQL setup guide added to About & Setup tab
+
 ### v1.8.1 — bug fix
 - Fixed secondary alignment never showing: alignment field now mandatory in prompt
 - Fixed rival entities both appearing: added explicit rule that criticizing an entity does not count as alignment with them
