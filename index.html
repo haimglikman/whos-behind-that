@@ -201,7 +201,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.9.0</div>
+      <div class="version-badge" id="version-badge">v1.10.0</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -644,9 +644,91 @@ const DEFAULT_ENTITIES = [
 ];
 
 // ─────────────────────────────────────────────
-// VERSION
+// ENTITY RELATIONSHIPS
+// Used by the coherence check to understand
+// which entities can plausibly co-align
 // ─────────────────────────────────────────────
-const APP_VERSION = '1.9.0';
+const ENTITY_RELATIONS = {
+  // Format: id -> { patrons: [], proxies: [], coalition: [], rivals: [] }
+  // Iran's axis
+  3:  { patrons: [], proxies: [17,18,19,20], coalition: [17,18,19,20], rivals: [1,27,28,29,51,52,53,54] },
+  // Hamas
+  17: { patrons: [3], proxies: [], coalition: [3,18,19,20,22], rivals: [1,23,27,28,29,51,52,53] },
+  // Hezbollah
+  18: { patrons: [3], proxies: [], coalition: [3,17,19,20], rivals: [1,27,28,29] },
+  // PIJ
+  19: { patrons: [3], proxies: [], coalition: [3,17,18], rivals: [1,23,27,28] },
+  // Houthis
+  20: { patrons: [3], proxies: [], coalition: [3,17,18], rivals: [1,2,27] },
+  // Israel / Netanyahu
+  1:  { patrons: [], proxies: [], coalition: [2,27,28,29,39,49], rivals: [3,17,18,19,20,51,52,53,55,56] },
+  27: { patrons: [], proxies: [], coalition: [1,2,28,49], rivals: [3,17,51,52,53,54,55] },
+  28: { patrons: [], proxies: [], coalition: [1,27], rivals: [3,17,51,52,53,54,55,56] },
+  // Israeli opposition / protest / hostage families
+  51: { patrons: [], proxies: [], coalition: [52,53,54,55,56], rivals: [1,27,28,3,17] },
+  52: { patrons: [], proxies: [], coalition: [51,53,54,55], rivals: [1,27,28] },
+  53: { patrons: [], proxies: [], coalition: [51,52,54], rivals: [1,27,28] },
+  54: { patrons: [], proxies: [], coalition: [51,52,53], rivals: [1,27,28,3,17] },
+  55: { patrons: [], proxies: [], coalition: [51,52,53,56,41,42,43,36], rivals: [1,27,28,39,49] },
+  56: { patrons: [], proxies: [], coalition: [51,55,23], rivals: [1,27,28] },
+  // US
+  2:  { patrons: [], proxies: [], coalition: [1,27,39,49], rivals: [3,17,18,19,20,45,44] },
+  30: { patrons: [], proxies: [], coalition: [2,1,27,39,49], rivals: [33,3,17] },
+  31: { patrons: [], proxies: [], coalition: [2,30,32], rivals: [33,3,17] },
+  32: { patrons: [], proxies: [], coalition: [2,30,31], rivals: [33,3,17] },
+  33: { patrons: [], proxies: [], coalition: [40,41,42,43,55,36], rivals: [2,30,31,32,39,49] },
+  // PA
+  23: { patrons: [], proxies: [], coalition: [5,56], rivals: [17,19,28] },
+  24: { patrons: [], proxies: [], coalition: [23,5], rivals: [17,19,28] },
+  // Russia / China — opportunistic alignment
+  44: { patrons: [], proxies: [], coalition: [45,3], rivals: [2,30,31,32] },
+  45: { patrons: [], proxies: [], coalition: [44,3], rivals: [2,30,31,32] },
+  // Human rights / int'l law bloc
+  41: { patrons: [], proxies: [], coalition: [42,43,36,37,55,33], rivals: [1,27,28,39,49] },
+  42: { patrons: [], proxies: [], coalition: [41,43,36,37,55], rivals: [1,27,28,39,49] },
+  43: { patrons: [], proxies: [], coalition: [41,42,36,37,55], rivals: [1,27,28,39,49] },
+  36: { patrons: [], proxies: [], coalition: [41,42,43,37], rivals: [] },
+  // AIPAC / Evangelical — pro-Israel lobby bloc
+  39: { patrons: [], proxies: [], coalition: [49,2,30,31,32,1,27], rivals: [33,40,41,42,43] },
+  49: { patrons: [], proxies: [], coalition: [39,2,30,1,27], rivals: [33,40,41,42,43] },
+  40: { patrons: [], proxies: [], coalition: [33,55,36], rivals: [39,49,30,31,32] },
+};
+
+// Get relation type between two entity IDs
+function getRelation(idA, idB) {
+  const rel = ENTITY_RELATIONS[idA];
+  if (!rel) return 'unknown';
+  if (rel.patrons.includes(idB)) return 'patron';
+  if (rel.proxies.includes(idB)) return 'proxy';
+  if (rel.coalition.includes(idB)) return 'coalition';
+  if (rel.rivals.includes(idB)) return 'rival';
+  return 'neutral';
+}
+
+// Build a compact relationship summary for the scoring prompt
+function buildRelationshipSummary(entities) {
+  const lines = [];
+  entities.forEach(function(e) {
+    const rel = ENTITY_RELATIONS[e.id];
+    if (!rel) return;
+    const parts = [];
+    if (rel.patrons.length) {
+      const names = rel.patrons.map(function(id){ const en = entities.find(function(x){return x.id===id;}); return en?en.name:'?'; }).filter(Boolean);
+      if (names.length) parts.push('patron(s): ' + names.join(', '));
+    }
+    if (rel.proxies.length) {
+      const names = rel.proxies.map(function(id){ const en = entities.find(function(x){return x.id===id;}); return en?en.name:'?'; }).filter(Boolean);
+      if (names.length) parts.push('proxies: ' + names.join(', '));
+    }
+    if (rel.rivals.length) {
+      const names = rel.rivals.slice(0,4).map(function(id){ const en = entities.find(function(x){return x.id===id;}); return en?en.name:'?'; }).filter(Boolean);
+      if (names.length) parts.push('rivals: ' + names.join(', '));
+    }
+    if (parts.length) lines.push(e.name + ' — ' + parts.join(' | '));
+  });
+  return lines.join('\n');
+}
+const APP_VERSION = '1.10.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1117,18 +1199,20 @@ async function syncHistoryFromServer() {
     if (!r.ok) return;
     const data = await r.json();
     if (!data.scans || !data.scans.length) return;
-    // Merge server scans into localStorage — server is source of truth
-    const localById = {};
+    // Deduplicate by scanId only — server is source of truth
+    const localByScanId = {};
     const local = getHistory();
-    local.forEach(function(e){ localById[e.scanId || e.id] = e; });
+    local.forEach(function(e) {
+      const key = e.scanId || ('WBT-legacy-' + e.id);
+      if (!localByScanId[key]) localByScanId[key] = e;
+    });
     data.scans.forEach(function(s) {
-      // Map server fields to local format
-      const existing = localById[s.id];
+      const existing = localByScanId[s.id];
       if (existing) {
-        // Update comment from server (source of truth)
         existing.comment = s.comment || existing.comment || '';
+        existing.scanId = s.id;
       } else {
-        localById[s.id] = {
+        localByScanId[s.id] = {
           id: new Date(s.ts).getTime(),
           scanId: s.id,
           ts: s.ts,
@@ -1146,7 +1230,7 @@ async function syncHistoryFromServer() {
         };
       }
     });
-    const merged = Object.values(localById).sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+    const merged = Object.values(localByScanId).sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
     saveHistory(merged);
     renderHistory();
     updateHistoryCount();
