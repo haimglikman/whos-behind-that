@@ -201,7 +201,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.10.0</div>
+      <div class="version-badge" id="version-badge">v1.10.1</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -728,7 +728,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.10.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1284,21 +1284,24 @@ function renderHistory() {
         '<span class="scan-id">' + escHtml(scanId) + '</span>' +
         '<span class="scan-version">' + escHtml(e.appVersion||'?') + ' / srv ' + escHtml(e.serverVersion||'?') + '</span>' +
       '</div>' +
-      '<div class="history-top" style="cursor:pointer" onclick="openHistoryEntry(' + e.id + ')">' +
-        '<span class="history-url">' + escHtml(e.url) + '</span>' +
-        '<div style="display:flex;align-items:center;gap:8px">' +
-          '<span class="history-score" style="color:' + color + '">' + e.overallScore + '%</span>' +
-          (hasFullResult ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:' + color + ';flex-shrink:0"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+      '<div style="cursor:pointer" onclick="openHistoryEntry(' + e.id + ')">' +
+        '<div class="history-top">' +
+          '<span class="history-url">' + escHtml(e.url) + '</span>' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            '<span class="history-score" style="color:' + color + '">' + e.overallScore + '%</span>' +
+            (hasFullResult ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:' + color + ';flex-shrink:0"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="history-time">' + dateStr + '</div>' +
+        (e.postText ? '<div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5">"' + escHtml(e.postText.slice(0,140)) + (e.postText.length>140?'…':'') + '"</div>' : '') +
+        '<div class="history-tags" style="margin-top:6px">' +
+          '<span class="history-tag" style="color:' + color + ';border-color:' + color + '33">' + escHtml(e.overallLabel) + '</span>' +
+          (e.topMatches||[]).map(function(m){ return '<span class="history-tag">' + escHtml(m) + '</span>'; }).join('') +
+          (e.hasImage ? '<span class="history-tag">has image</span>' : '') +
+          (hasFullResult ? '<span class="history-tag" style="margin-left:auto;color:var(--text3)">view full analysis →</span>' : '') +
         '</div>' +
       '</div>' +
-      '<div class="history-time">' + dateStr + '</div>' +
-      (e.postText ? '<div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5">"' + escHtml(e.postText.slice(0,140)) + (e.postText.length>140?'…':'') + '"</div>' : '') +
-      '<div class="history-tags" style="margin-top:6px">' +
-        '<span class="history-tag" style="color:' + color + ';border-color:' + color + '33">' + escHtml(e.overallLabel) + '</span>' +
-        (e.topMatches||[]).map(function(m){ return '<span class="history-tag">' + escHtml(m) + '</span>'; }).join('') +
-        (e.hasImage ? '<span class="history-tag">has image</span>' : '') +
-      '</div>' +
-      '<textarea class="comment-field" placeholder="Add a comment..." onchange="saveComment(\'' + escHtml(scanId) + '\', this.value)">' + escHtml(e.comment||'') + '</textarea>' +
+      '<textarea class="comment-field" placeholder="Add a comment..." onclick="event.stopPropagation()" onchange="saveComment(\'' + escHtml(scanId) + '\', this.value)">' + escHtml(e.comment||'') + '</textarea>' +
     '</div>';
   }).join('');
 }
