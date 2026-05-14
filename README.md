@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.10.0
+- Fixed duplicate history entries: deduplication now uses scanId as single key
+- Entity relationships map: patrons, proxies, coalitions and rivals defined for all 56 entities
+
 ### v1.9.0
 - Shared history: scans now stored in PostgreSQL and visible to all users
 - Scan IDs: every scan gets a unique ID in format WBT-{date}-{appVer}-{srvVer}-{random}
