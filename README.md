@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.10.1 — bug fix
+- History cards now fully clickable to open full analysis view
+- Comment textarea click is isolated so typing a comment doesn't trigger navigation
+- Added "view full analysis →" hint on cards that have a stored result
+
 ### v1.10.0
 - Fixed duplicate history entries: deduplication now uses scanId as single key
 - Entity relationships map: patrons, proxies, coalitions and rivals defined for all 56 entities
