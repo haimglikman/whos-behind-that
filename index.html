@@ -201,7 +201,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.12.0</div>
+      <div class="version-badge" id="version-badge">v1.12.1</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -728,7 +728,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.12.0';
+const APP_VERSION = '1.12.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -838,11 +838,19 @@ function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 function onUrlChange() {
   const url = document.getElementById('url-input').value.trim();
+  const isInstagram = /instagram\.com/i.test(url);
   const isInstagramOrFacebook = /instagram\.com|facebook\.com|fb\.com/i.test(url);
   document.getElementById('actor-handle-row').style.display = isInstagramOrFacebook ? 'block' : 'none';
-  // Hide manual text fallback when URL changes
-  if (!isInstagramOrFacebook) {
-    document.getElementById('manual-text-fallback').style.display = 'none';
+  // Instagram: show manual text area immediately since auto-fetch is blocked
+  const fb = document.getElementById('manual-text-fallback');
+  const fbMsg = fb.querySelector('div');
+  if (isInstagram) {
+    fb.style.display = 'block';
+    fbMsg.textContent = 'Instagram blocks automatic text fetching. Please paste the post text below:';
+    fbMsg.style.color = 'var(--text3)';
+  } else {
+    fb.style.display = 'none';
+    if (fbMsg) { fbMsg.textContent = '⚠ Could not fetch post text automatically. Paste it manually:'; fbMsg.style.color = 'var(--amber)'; }
   }
 }
 
@@ -905,6 +913,15 @@ async function startAnalysis() {
   if (!url) { toast('Please enter a URL.'); return; }
   const serverUrl = getServerUrl();
   if (!serverUrl) { toast('Please enter your server URL first.'); document.getElementById('server-url-input').focus(); return; }
+
+  // Instagram: always use manual text since auto-fetch is blocked
+  if (/instagram\.com/i.test(url)) {
+    const postText = document.getElementById('post-text').value.trim();
+    if (!postText) { toast('Please paste the Instagram post text first.'); document.getElementById('post-text').focus(); return; }
+    await analyzeWithManualText();
+    return;
+  }
+
   showLoader();
   try {
     await performServerAnalysis(url, serverUrl);
