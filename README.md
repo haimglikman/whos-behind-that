@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.12.0
+- Instagram and Facebook now fetch automatically like X — no more manual text pasting
+- Manual text fallback still available if post is private or login-gated
+
 ### v1.11.0
 - Entity profiles enriched with Hebrew and Arabic political vocabulary
 - Key terms: ביביזם, עסקת חטופים, פלישה, ריבונות, אכיפה, מאחזים (Hebrew); مقاومة, محور المقاومة, التطبيع, الاحتلال (Arabic)
