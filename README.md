@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.12.1 — bug fix
+- Instagram: text area shown immediately with clear message instead of failed auto-fetch attempt
+- Instagram routes directly to manual text analysis on Analyze click
+
 ### v1.12.0
 - Instagram and Facebook now fetch automatically like X — no more manual text pasting
 - Manual text fallback still available if post is private or login-gated
