@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.12.3 — bug fix
+- Restored original auto-fetch behavior for Instagram
+
+### v1.12.2 — IRELEVANT BUG FIXES!!!
+
 ### v1.12.1 — bug fix
 - Instagram: text area shown immediately with clear message instead of failed auto-fetch attempt
 - Instagram routes directly to manual text analysis on Analyze click
