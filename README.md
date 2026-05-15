@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.10.2 — bug fix
+- Fixed duplicate history entries: sync now uses URL+timestamp as secondary dedup key
+- Migration now removes existing numeric-ID duplicates of WBT entries on first load
+- Local fullResult preserved when server entry doesn't include it
+
 ### v1.10.1 — bug fix
 - History cards now fully clickable to open full analysis view
 - Comment textarea click is isolated so typing a comment doesn't trigger navigation
