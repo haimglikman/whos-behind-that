@@ -201,7 +201,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.11.0</div>
+      <div class="version-badge" id="version-badge">v1.12.0</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -728,7 +728,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.12.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -840,6 +840,10 @@ function onUrlChange() {
   const url = document.getElementById('url-input').value.trim();
   const isInstagramOrFacebook = /instagram\.com|facebook\.com|fb\.com/i.test(url);
   document.getElementById('actor-handle-row').style.display = isInstagramOrFacebook ? 'block' : 'none';
+  // Hide manual text fallback when URL changes
+  if (!isInstagramOrFacebook) {
+    document.getElementById('manual-text-fallback').style.display = 'none';
+  }
 }
 
 function extractHandle(url, post) {
@@ -880,7 +884,10 @@ function resetAnalysis() {
   document.getElementById('actor-handle-row').style.display = 'none';
   const pt = document.getElementById('post-text');
   if (pt) pt.value = '';
-  document.getElementById('manual-text-fallback').style.display = 'none';
+  const fb = document.getElementById('manual-text-fallback');
+  fb.style.display = 'none';
+  const fbMsg = fb.querySelector('div');
+  if (fbMsg) { fbMsg.textContent = '⚠ Could not fetch post text automatically. Paste it manually:'; fbMsg.style.color = 'var(--amber)'; }
   document.getElementById('actor-prompt').style.display = 'none';
   document.getElementById('actor-result-card').style.display = 'none';
 }
