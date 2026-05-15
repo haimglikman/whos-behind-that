@@ -201,7 +201,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.10.1</div>
+      <div class="version-badge" id="version-badge">v1.10.2</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -728,7 +728,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.10.1';
+const APP_VERSION = '1.10.2';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1135,13 +1135,41 @@ function generateScanId(appVer, srvVer) {
 function migrateLocalHistory() {
   const h = getHistory();
   let changed = false;
+
+  // Add missing fields
   h.forEach(function(e) {
     if (!e.scanId) { e.scanId = 'WBT-legacy-' + String(e.id||Date.now()); changed = true; }
     if (!e.appVersion) { e.appVersion = '≤v1.8.1'; changed = true; }
     if (!e.serverVersion) { e.serverVersion = '≤v1.4.1'; changed = true; }
     if (e.comment === undefined) { e.comment = ''; changed = true; }
   });
-  if (changed) saveHistory(h);
+
+  // Remove numeric-id duplicates: if two entries share the same URL and
+  // one has a proper WBT-... scanId and one has a legacy numeric id, keep WBT only
+  const seenUrls = {};
+  const toKeep = [];
+  // Sort so WBT entries come before legacy entries
+  const sorted = h.slice().sort(function(a,b) {
+    const aIsWbt = (a.scanId||'').startsWith('WBT-2');
+    const bIsWbt = (b.scanId||'').startsWith('WBT-2');
+    if (aIsWbt && !bIsWbt) return -1;
+    if (!aIsWbt && bIsWbt) return 1;
+    return new Date(b.ts) - new Date(a.ts);
+  });
+  sorted.forEach(function(e) {
+    const tsMin = e.ts ? e.ts.slice(0,16) : String(e.id);
+    const key = e.url + '|' + tsMin;
+    if (!seenUrls[key]) {
+      seenUrls[key] = true;
+      toKeep.push(e);
+    } else {
+      changed = true; // dropped a duplicate
+    }
+  });
+  // Re-sort by time descending
+  toKeep.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+
+  if (changed) saveHistory(toKeep);
 }
 
 async function saveToHistory(url, postText, result, srvVersion) {
@@ -1199,38 +1227,60 @@ async function syncHistoryFromServer() {
     if (!r.ok) return;
     const data = await r.json();
     if (!data.scans || !data.scans.length) return;
-    // Deduplicate by scanId only — server is source of truth
-    const localByScanId = {};
+
     const local = getHistory();
+
+    // Build lookup by scanId AND by url+ts combo as fallback
+    const byScanId = {};
+    const byUrlTs = {};
     local.forEach(function(e) {
       const key = e.scanId || ('WBT-legacy-' + e.id);
-      if (!localByScanId[key]) localByScanId[key] = e;
+      byScanId[key] = e;
+      // url+minute as secondary key to catch dupes without scanId
+      const tsMin = e.ts ? e.ts.slice(0,16) : '';
+      if (e.url && tsMin) byUrlTs[e.url + '|' + tsMin] = e;
     });
+
     data.scans.forEach(function(s) {
-      const existing = localByScanId[s.id];
+      // Try match by scanId first
+      const existing = byScanId[s.id];
       if (existing) {
         existing.comment = s.comment || existing.comment || '';
         existing.scanId = s.id;
-      } else {
-        localByScanId[s.id] = {
-          id: new Date(s.ts).getTime(),
-          scanId: s.id,
-          ts: s.ts,
-          url: s.url,
-          postText: s.postText || '',
-          overallScore: s.overallScore || 0,
-          overallLabel: s.overallLabel || '',
-          topMatches: s.topMatches || [],
-          textAI: s.textAI || 5,
-          hasImage: s.hasImage || false,
-          appVersion: s.appVersion || '?',
-          serverVersion: s.serverVersion || '?',
-          comment: s.comment || '',
-          fullResult: s.fullResult || null
-        };
+        // Preserve local fullResult if server doesn't have it
+        if (s.fullResult) existing.fullResult = s.fullResult;
+        return;
       }
+      // Try match by url+timestamp (catches entries saved before scanId was stable)
+      const tsMin = s.ts ? String(s.ts).slice(0,16) : '';
+      const urlKey = s.url + '|' + tsMin;
+      const existingByUrl = byUrlTs[urlKey];
+      if (existingByUrl) {
+        existingByUrl.scanId = s.id; // upgrade to proper scanId
+        existingByUrl.comment = s.comment || existingByUrl.comment || '';
+        byScanId[s.id] = existingByUrl; // re-index by new scanId
+        return;
+      }
+      // Genuinely new entry from another user's device
+      byScanId[s.id] = {
+        id: new Date(s.ts).getTime(),
+        scanId: s.id,
+        ts: s.ts,
+        url: s.url,
+        postText: s.postText || '',
+        overallScore: s.overallScore || 0,
+        overallLabel: s.overallLabel || '',
+        topMatches: s.topMatches || [],
+        textAI: s.textAI || 5,
+        hasImage: s.hasImage || false,
+        appVersion: s.appVersion || '?',
+        serverVersion: s.serverVersion || '?',
+        comment: s.comment || '',
+        fullResult: s.fullResult || null
+      };
     });
-    const merged = Object.values(localByScanId).sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+
+    const merged = Object.values(byScanId).sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
     saveHistory(merged);
     renderHistory();
     updateHistoryCount();
