@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.11.0
+- Entity profiles enriched with Hebrew and Arabic political vocabulary
+- Key terms: ביביזם, עסקת חטופים, פלישה, ריבונות, אכיפה, מאחזים (Hebrew); مقاومة, محور المقاومة, التطبيع, الاحتلال (Arabic)
+
 ### v1.10.2 — bug fix
 - Fixed duplicate history entries: sync now uses URL+timestamp as secondary dedup key
 - Migration now removes existing numeric-ID duplicates of WBT entries on first load
