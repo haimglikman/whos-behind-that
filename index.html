@@ -153,6 +153,20 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .history-tag { font-size: 10px; padding: 2px 7px; background: var(--bg3); border: 1px solid var(--border); border-radius: 99px; color: var(--text2); }
 .history-type { font-size: 10px; padding: 2px 7px; border-radius: 99px; }
 .no-history { font-size: 13px; color: var(--text3); padding: 32px; text-align: center; }
+.convergent-box { background: var(--bg2); border: 1px dashed rgba(240,165,0,0.4); border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 12px; }
+.convergent-header { font-size: 9px; font-weight: 600; color: var(--amber); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.convergent-entities { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.convergent-outcome { font-size: 11px; color: var(--text2); line-height: 1.55; margin-bottom: 6px; }
+.convergent-rival-tag { font-size: 9px; padding: 1px 7px; background: var(--red-dim); color: var(--red); border-radius: 99px; font-family: var(--mono); }
+.history-filters { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
+.filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; }
+.filter-input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; color: var(--text); font-size: 11px; font-family: var(--sans); outline: none; width: 100%; }
+.filter-input:focus { border-color: var(--red); }
+.filter-select { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; color: var(--text); font-size: 11px; font-family: var(--sans); outline: none; width: 100%; cursor: pointer; }
+.filter-actions { display: flex; gap: 8px; align-items: center; }
+.filter-count { font-size: 11px; color: var(--text3); margin-left: auto; }
 .scan-id { font-family: var(--mono); font-size: 9px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 99px; border: 1px solid var(--border); }
 .scan-version { font-size: 9px; color: var(--text3); font-family: var(--mono); }
 .comment-field { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; color: var(--text); font-size: 11px; font-family: var(--sans); resize: none; outline: none; min-height: 38px; margin-top: 8px; transition: border-color 0.2s; line-height: 1.5; }
@@ -201,7 +215,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.12.3</div>
+      <div class="version-badge" id="version-badge">v1.13.0</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -328,6 +342,18 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
             <div id="r-primary-matches"></div>
             <div id="r-secondary-matches"></div>
           </div>
+          <div id="r-convergent-card" style="display:none;margin-bottom:12px">
+            <div class="convergent-box">
+              <div class="convergent-header">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Hidden convergent interest
+              </div>
+              <div class="convergent-entities" id="r-convergent-entities"></div>
+              <div class="convergent-outcome" id="r-convergent-outcome"></div>
+              <div style="font-size:11px;color:var(--text2);line-height:1.55" id="r-convergent-explanation"></div>
+              <div style="margin-top:6px" id="r-convergent-rival-tag"></div>
+            </div>
+          </div>
           <div class="analysis-card">
             <div class="card-label">Account / user background check</div>
             <div class="grid-2" style="margin-bottom:12px">
@@ -363,6 +389,67 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
         <div><h1>Post history</h1><p>All posts analyzed — shared across all users</p></div>
       </div>
       <div style="padding:24px 36px">
+        <div class="history-filters">
+          <div class="filter-grid">
+            <div class="filter-group">
+              <div class="filter-label">Platform</div>
+              <select class="filter-select" id="f-platform" onchange="applyFilters()">
+                <option value="">All platforms</option>
+                <option value="x">X (Twitter)</option>
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">App version</div>
+              <input type="text" class="filter-input" id="f-app-version" placeholder="e.g. 1.13.0" oninput="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Server version</div>
+              <input type="text" class="filter-input" id="f-server-version" placeholder="e.g. 2.0.0" oninput="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Entity match</div>
+              <input type="text" class="filter-input" id="f-entity" placeholder="e.g. Hamas" oninput="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Date from</div>
+              <input type="date" class="filter-input" id="f-date-from" onchange="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Date to</div>
+              <input type="date" class="filter-input" id="f-date-to" onchange="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Min score %</div>
+              <input type="number" class="filter-input" id="f-min-score" placeholder="0" min="0" max="100" oninput="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Min AI score</div>
+              <input type="number" class="filter-input" id="f-min-ai" placeholder="1" min="1" max="10" oninput="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Alignment type</div>
+              <select class="filter-select" id="f-alignment" onchange="applyFilters()">
+                <option value="">Any</option>
+                <option value="primary">Has primary</option>
+                <option value="secondary">Has secondary</option>
+                <option value="none">No alignment</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Has comment</div>
+              <select class="filter-select" id="f-has-comment" onchange="applyFilters()">
+                <option value="">Any</option>
+                <option value="true">With comment</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-sm" onclick="clearFilters()">Clear filters</button>
+            <span class="filter-count" id="filter-count"></span>
+          </div>
+        </div>
         <div id="history-list"></div>
       </div>
     </div>
@@ -728,7 +815,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.12.3';
+const APP_VERSION = '1.13.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -836,6 +923,57 @@ function pillClass(type) {
 }
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function detectPlatformClient(url) {
+  if (/x\.com|twitter\.com/i.test(url)) return 'x';
+  if (/instagram\.com/i.test(url)) return 'instagram';
+  if (/facebook\.com|fb\.com/i.test(url)) return 'facebook';
+  return 'unknown';
+}
+
+// ─────────────────────────────────────────────
+// HISTORY FILTERS
+// ─────────────────────────────────────────────
+function applyFilters() {
+  const h = getHistory();
+  const platform = document.getElementById('f-platform').value;
+  const appVersion = document.getElementById('f-app-version').value.trim();
+  const serverVersion = document.getElementById('f-server-version').value.trim();
+  const entity = document.getElementById('f-entity').value.trim().toLowerCase();
+  const dateFrom = document.getElementById('f-date-from').value;
+  const dateTo = document.getElementById('f-date-to').value;
+  const minScore = parseInt(document.getElementById('f-min-score').value) || 0;
+  const minAI = parseInt(document.getElementById('f-min-ai').value) || 0;
+  const alignment = document.getElementById('f-alignment').value;
+  const hasComment = document.getElementById('f-has-comment').value;
+
+  const filtered = h.filter(function(e) {
+    if (platform && e.platform !== platform) return false;
+    if (appVersion && !(e.appVersion||'').includes(appVersion)) return false;
+    if (serverVersion && !(e.serverVersion||'').includes(serverVersion)) return false;
+    if (entity) {
+      const matches = (e.topMatches||[]).map(function(m){return m.toLowerCase();});
+      if (!matches.some(function(m){return m.includes(entity);})) return false;
+    }
+    if (dateFrom && new Date(e.ts) < new Date(dateFrom)) return false;
+    if (dateTo && new Date(e.ts) > new Date(dateTo + 'T23:59:59')) return false;
+    if (minScore && (e.overallScore||0) < minScore) return false;
+    if (minAI && (e.textAI||0) < minAI) return false;
+    if (alignment === 'primary' && !(e.fullResult && (e.fullResult.matches||[]).some(function(m){return !m.secondary;}))) return false;
+    if (alignment === 'secondary' && !(e.fullResult && (e.fullResult.matches||[]).some(function(m){return m.secondary;}))) return false;
+    if (alignment === 'none' && (e.fullResult && (e.fullResult.matches||[]).length > 0)) return false;
+    if (hasComment === 'true' && !(e.comment && e.comment.trim())) return false;
+    return true;
+  });
+
+  document.getElementById('filter-count').textContent = filtered.length + ' of ' + h.length + ' scans';
+  renderHistoryList(filtered);
+}
+
+function clearFilters() {
+  ['f-platform','f-alignment','f-has-comment'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['f-app-version','f-server-version','f-entity','f-date-from','f-date-to','f-min-score','f-min-ai'].forEach(function(id){ document.getElementById(id).value = ''; });
+  applyFilters();
+}
 function onUrlChange() {
   const url = document.getElementById('url-input').value.trim();
   const isInstagramOrFacebook = /instagram\.com|facebook\.com|fb\.com/i.test(url);
@@ -1122,6 +1260,48 @@ function showResults(url, d) {
   document.getElementById('r-flags').innerHTML = (d.flags||[]).map(function(f) {
     return '<div class="flag-item"><div class="flag-dot" style="background:' + f.color + '"></div><span>' + escHtml(f.text) + '</span></div>';
   }).join('');
+
+  // Hide convergent card initially, then check async
+  document.getElementById('r-convergent-card').style.display = 'none';
+  if (d.matches && d.matches.length > 0) {
+    checkConvergentInterest(d);
+  }
+}
+
+async function checkConvergentInterest(d) {
+  const serverUrl = getServerUrl();
+  if (!serverUrl) return;
+  const postText = d.post && d.post.text ? d.post.text : '';
+  if (!postText) return;
+  const primaryMatches = (d.matches||[]).filter(function(m){ return !m.secondary; });
+  if (primaryMatches.length === 0) return;
+  try {
+    const res = await fetch(serverUrl + '/convergent-interest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        postText: postText,
+        primaryMatches: primaryMatches,
+        allEntities: getEntities()
+      })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const c = data.convergent;
+    if (!c || !c.found) return;
+    // Render convergent interest card
+    document.getElementById('r-convergent-entities').textContent =
+      c.entityA.name + '  +  ' + c.entityB.name;
+    document.getElementById('r-convergent-outcome').textContent = c.sharedOutcome;
+    document.getElementById('r-convergent-explanation').textContent = c.explanation;
+    const rivalTag = document.getElementById('r-convergent-rival-tag');
+    rivalTag.innerHTML = c.isRivals
+      ? '<span class="convergent-rival-tag">normally rivals</span>'
+      : '';
+    document.getElementById('r-convergent-card').style.display = 'block';
+  } catch(e) {
+    console.warn('Convergent interest check failed:', e.message);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1185,11 +1365,13 @@ async function saveToHistory(url, postText, result, srvVersion) {
   const serverUrl = getServerUrl();
   const srvVer = srvVersion || (serverUrl ? await fetchSrvVersion(serverUrl) : '?');
   const scanId = generateScanId(APP_VERSION, srvVer);
+  const platform = detectPlatformClient(url);
   const entry = {
     id: Date.now(),
     scanId: scanId,
     ts: new Date().toISOString(),
     url: url,
+    platform: platform,
     postText: (postText||'').slice(0, 500),
     overallScore: result.overall.score,
     overallLabel: result.overall.label,
@@ -1326,13 +1508,16 @@ function openHistoryEntry(id) {
 }
 
 function renderHistory() {
-  const h = getHistory();
+  applyFilters();
+}
+
+function renderHistoryList(entries) {
   const list = document.getElementById('history-list');
-  if (h.length === 0) {
-    list.innerHTML = '<div class="no-history">No scans yet. Analyze a post to see it here.</div>';
+  if (!entries || entries.length === 0) {
+    list.innerHTML = '<div class="no-history">No scans match your filters.</div>';
     return;
   }
-  list.innerHTML = h.map(function(e) {
+  list.innerHTML = entries.map(function(e) {
     const d = new Date(e.ts);
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const color = alignmentColor(e.overallScore);
@@ -1340,7 +1525,10 @@ function renderHistory() {
     const scanId = e.scanId || ('WBT-legacy-' + e.id);
     return '<div class="history-item">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">' +
-        '<span class="scan-id">' + escHtml(scanId) + '</span>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<span style="font-size:11px">' + ({x:'𝕏',instagram:'📷',facebook:'f',unknown:'🔗'}[e.platform||'unknown']||'🔗') + '</span>' +
+          '<span class="scan-id">' + escHtml(scanId) + '</span>' +
+        '</div>' +
         '<span class="scan-version">' + escHtml(e.appVersion||'?') + ' / srv ' + escHtml(e.serverVersion||'?') + '</span>' +
       '</div>' +
       '<div style="cursor:pointer" onclick="openHistoryEntry(' + e.id + ')">' +
