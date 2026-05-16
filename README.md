@@ -1,5 +1,11 @@
 ## Changelog
 
+### v1.13.0
+- Convergent interest detection: hidden shared interests between rival entities shown below results
+- History filters: platform, app/server version, entity, date range, score, AI score, alignment type, has comment
+- Platform icon shown in each history card
+- Platform field stored per scan
+
 ### v1.12.3 — bug fix
 - Restored original auto-fetch behavior for Instagram
 
