@@ -175,6 +175,9 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 /* Toast */
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 16px; font-size: 12px; color: var(--text); z-index: 1000; opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateY(0); }
+.error-banner { display:none; background: rgba(232,96,60,0.08); border: 1px solid rgba(232,96,60,0.3); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: var(--red); line-height: 1.5; user-select: text; cursor: text; position: relative; }
+.error-banner .error-dismiss { position: absolute; right: 10px; top: 8px; font-size: 14px; cursor: pointer; color: var(--text3); line-height: 1; }
+.error-banner .error-dismiss:hover { color: var(--text); }
 .disclaimer-box { background: rgba(74,158,255,0.05); border: 1px solid rgba(74,158,255,0.15); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 11px; color: var(--text3); line-height: 1.6; margin-top: 16px; }
 /* About */
 .about-section { max-width: 640px; }
@@ -215,7 +218,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.13.1</div>
+      <div class="version-badge" id="version-badge">v1.13.2</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -285,6 +288,10 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
           <div id="actor-handle-row" style="display:none;margin-bottom:10px">
             <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Instagram/Facebook post detected — enter the account handle for actor research (optional):</div>
             <input type="text" class="url-input" id="manual-actor-handle" placeholder="@username" style="font-size:12px;margin-bottom:0" />
+          </div>
+          <div id="error-banner" class="error-banner">
+            <span class="error-dismiss" onclick="document.getElementById('error-banner').style.display='none'">×</span>
+            <span id="error-banner-text"></span>
           </div>
           <div id="manual-text-fallback" style="display:none">
             <div style="font-size:11px;color:var(--amber);margin-bottom:6px">⚠ Could not fetch post text automatically. Paste it manually:</div>
@@ -815,7 +822,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.13.1';
+const APP_VERSION = '1.13.2';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -900,6 +907,22 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function showError(msg) {
+  const banner = document.getElementById('error-banner');
+  const text = document.getElementById('error-banner-text');
+  if (banner && text) {
+    text.textContent = msg;
+    banner.style.display = 'block';
+  } else {
+    toast(msg);
+  }
+}
+
+function hideError() {
+  const banner = document.getElementById('error-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 // ─────────────────────────────────────────────
@@ -1032,6 +1055,7 @@ const LOAD_STEPS = [
 let currentResult = null;
 
 function resetAnalysis() {
+  hideError();
   document.getElementById('loader').classList.remove('active');
   document.getElementById('results').classList.remove('active');
   document.getElementById('url-input').value = '';
@@ -1060,13 +1084,15 @@ async function startAnalysis() {
   if (!url) { toast('Please enter a URL.'); return; }
   const serverUrl = getServerUrl();
   if (!serverUrl) { toast('Please enter your server URL first.'); document.getElementById('server-url-input').focus(); return; }
+  hideError();
   showLoader();
   try {
     await performServerAnalysis(url, serverUrl);
   } catch(e) {
     document.getElementById('loader').classList.remove('active');
     document.getElementById('manual-text-fallback').style.display = 'block';
-    toast('Could not fetch post automatically: ' + e.message);
+    showError(e.message);
+    saveFailedScan(url, e.message);
   }
 }
 
@@ -1103,7 +1129,8 @@ async function analyzeWithManualText() {
   } catch(e) {
     document.getElementById('loader').classList.remove('active');
     document.getElementById('manual-text-fallback').style.display = 'block';
-    toast('Analysis error: ' + e.message);
+    showError(e.message);
+    saveFailedScan(url, e.message);
   }
 }
 
@@ -1420,7 +1447,41 @@ async function saveToHistory(url, postText, result, srvVersion) {
   return entry;
 }
 
-let _cachedSrvVersion = null;
+async function saveFailedScan(url, errorMsg) {
+  const serverUrl = getServerUrl();
+  const srvVer = await fetchSrvVersion(serverUrl).catch(function(){ return '?'; });
+  const scanId = generateScanId(APP_VERSION, srvVer);
+  const platform = detectPlatformClient(url);
+  const entry = {
+    id: Date.now(),
+    scanId: scanId,
+    ts: new Date().toISOString(),
+    url: url,
+    platform: platform,
+    postText: '',
+    overallScore: 0,
+    overallLabel: 'Failed',
+    topMatches: [],
+    textAI: 0,
+    hasImage: false,
+    appVersion: APP_VERSION,
+    serverVersion: srvVer,
+    comment: '',
+    failed: true,
+    errorMsg: errorMsg,
+    fullResult: null
+  };
+  const h = getHistory().filter(function(e){
+    const tsMin = e.ts ? e.ts.slice(0,16) : '';
+    const newTsMin = entry.ts.slice(0,16);
+    return e.scanId !== scanId && !(e.url === url && tsMin === newTsMin);
+  });
+  h.unshift(entry);
+  if (h.length > 500) h.splice(500);
+  saveHistory(h);
+}
+
+
 async function fetchSrvVersion(serverUrl) {
   if (_cachedSrvVersion) return _cachedSrvVersion;
   try {
@@ -1541,13 +1602,34 @@ function renderHistoryList(entries) {
   list.innerHTML = entries.map(function(e) {
     const d = new Date(e.ts);
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const scanId = e.scanId || ('WBT-legacy-' + e.id);
+    const platformIcon = {x:'𝕏',instagram:'📷',facebook:'f',unknown:'🔗'}[e.platform||'unknown']||'🔗';
+
+    // Failed scan — distinct red styling
+    if (e.failed) {
+      return '<div class="history-item" style="border-color:rgba(232,96,60,0.3);background:rgba(232,96,60,0.04)">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">' +
+          '<div style="display:flex;align-items:center;gap:6px">' +
+            '<span style="font-size:11px">' + platformIcon + '</span>' +
+            '<span class="scan-id">' + escHtml(scanId) + '</span>' +
+            '<span style="font-size:9px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Failed</span>' +
+          '</div>' +
+          '<span class="scan-version">' + escHtml(e.appVersion||'?') + ' / srv ' + escHtml(e.serverVersion||'?') + '</span>' +
+        '</div>' +
+        '<div class="history-url" style="margin-bottom:4px">' + escHtml(e.url) + '</div>' +
+        '<div class="history-time">' + dateStr + '</div>' +
+        '<div style="font-size:11px;color:var(--red);margin-top:6px;line-height:1.5;user-select:text;cursor:text">⚠ ' + escHtml(e.errorMsg||'Unknown error') + '</div>' +
+        '<textarea class="comment-field" placeholder="Add a comment..." onclick="event.stopPropagation()" onchange="saveComment(\'' + escHtml(scanId) + '\', this.value)">' + escHtml(e.comment||'') + '</textarea>' +
+      '</div>';
+    }
+
+    // Successful scan
     const color = alignmentColor(e.overallScore);
     const hasFullResult = !!e.fullResult;
-    const scanId = e.scanId || ('WBT-legacy-' + e.id);
     return '<div class="history-item">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">' +
         '<div style="display:flex;align-items:center;gap:6px">' +
-          '<span style="font-size:11px">' + ({x:'𝕏',instagram:'📷',facebook:'f',unknown:'🔗'}[e.platform||'unknown']||'🔗') + '</span>' +
+          '<span style="font-size:11px">' + platformIcon + '</span>' +
           '<span class="scan-id">' + escHtml(scanId) + '</span>' +
         '</div>' +
         '<span class="scan-version">' + escHtml(e.appVersion||'?') + ' / srv ' + escHtml(e.serverVersion||'?') + '</span>' +
