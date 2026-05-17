@@ -1,5 +1,10 @@
 ## Changelog
 
+### v1.13.2 — bug fix
+- Error messages now shown in persistent copyable banner instead of disappearing toast
+- Failed scans saved to history with red styling and error reason
+- Error banner clears on new analysis
+
 ### v1.13.1 — bug fix
 - Fixed duplicate history entries: saveToHistory now deduplicates before inserting
 - Filters now retroactive: platform inferred from URL for legacy entries, entity search covers all text fields
