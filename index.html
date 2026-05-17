@@ -218,7 +218,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.13.2</div>
+      <div class="version-badge" id="version-badge">v1.13.3</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -822,7 +822,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.13.2';
+const APP_VERSION = '1.13.3';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1124,7 +1124,7 @@ async function analyzeWithManualText() {
     const result = buildResult(analysis, {text: postText}, entities);
     showResults(url, result);
     const srvVer = await fetchSrvVersion(serverUrl);
-    await saveToHistory(url, postText, result, srvVer);
+    await saveToHistory(url, postText, result, srvVer).catch(function(e){ console.warn('History save error:', e.message); });
     recordScan();
   } catch(e) {
     document.getElementById('loader').classList.remove('active');
@@ -1154,7 +1154,7 @@ async function performServerAnalysis(url, serverUrl) {
   const result = buildResult(data.analysis, data.post, entities);
   showResults(url, result);
   const srvVer = await fetchSrvVersion(serverUrl);
-  await saveToHistory(url, (data.post && data.post.text) || '', result, srvVer);
+  await saveToHistory(url, (data.post && data.post.text) || '', result, srvVer).catch(function(e){ console.warn('History save error:', e.message); });
   recordScan();
 }
 
@@ -1481,6 +1481,8 @@ async function saveFailedScan(url, errorMsg) {
   saveHistory(h);
 }
 
+
+let _cachedSrvVersion = null;
 
 async function fetchSrvVersion(serverUrl) {
   if (_cachedSrvVersion) return _cachedSrvVersion;
