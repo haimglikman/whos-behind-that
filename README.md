@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.13.3 — bug fix
+- Fixed _cachedSrvVersion is not defined error that caused successful analyses to save as failed
+- saveToHistory errors no longer bubble up to trigger failed scan entries
+
 ### v1.13.2 — bug fix
 - Error messages now shown in persistent copyable banner instead of disappearing toast
 - Failed scans saved to history with red styling and error reason
