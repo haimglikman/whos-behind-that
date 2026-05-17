@@ -1,5 +1,9 @@
 ## Changelog
 
+### v1.13.1 — bug fix
+- Fixed duplicate history entries: saveToHistory now deduplicates before inserting
+- Filters now retroactive: platform inferred from URL for legacy entries, entity search covers all text fields
+
 ### v1.13.0
 - Convergent interest detection: hidden shared interests between rival entities shown below results
 - History filters: platform, app/server version, entity, date range, score, AI score, alignment type, has comment
