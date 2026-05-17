@@ -215,7 +215,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
     <div class="wordmark">
       <div class="name">WHO'S BEHIND THAT?</div>
       <div class="sub">Social post intelligence</div>
-      <div class="version-badge" id="version-badge">v1.13.0</div>
+      <div class="version-badge" id="version-badge">v1.13.1</div>
       <div class="version-badge" id="server-version-badge" style="margin-top:3px;opacity:0.6" title="Server version">srv —</div>
     </div>
     <div class="nav-section">
@@ -815,7 +815,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '1.13.0';
+const APP_VERSION = '1.13.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -947,20 +947,35 @@ function applyFilters() {
   const hasComment = document.getElementById('f-has-comment').value;
 
   const filtered = h.filter(function(e) {
-    if (platform && e.platform !== platform) return false;
+    // Platform — skip filter if entry has no platform field (legacy)
+    if (platform && e.platform && e.platform !== platform) return false;
+    if (platform && !e.platform) {
+      // Infer platform from URL for legacy entries
+      const inferred = detectPlatformClient(e.url || '');
+      if (inferred !== platform) return false;
+    }
+    // Version filters — partial match
     if (appVersion && !(e.appVersion||'').includes(appVersion)) return false;
     if (serverVersion && !(e.serverVersion||'').includes(serverVersion)) return false;
+    // Entity — search topMatches AND postText AND overallLabel
     if (entity) {
-      const matches = (e.topMatches||[]).map(function(m){return m.toLowerCase();});
-      if (!matches.some(function(m){return m.includes(entity);})) return false;
+      const inMatches = (e.topMatches||[]).some(function(m){ return m.toLowerCase().includes(entity); });
+      const inLabel = (e.overallLabel||'').toLowerCase().includes(entity);
+      const inText = (e.postText||'').toLowerCase().includes(entity);
+      const inFullResult = e.fullResult && (e.fullResult.matches||[]).some(function(m){ return (m.name||'').toLowerCase().includes(entity); });
+      if (!inMatches && !inLabel && !inText && !inFullResult) return false;
     }
+    // Date filters
     if (dateFrom && new Date(e.ts) < new Date(dateFrom)) return false;
     if (dateTo && new Date(e.ts) > new Date(dateTo + 'T23:59:59')) return false;
+    // Score filters
     if (minScore && (e.overallScore||0) < minScore) return false;
     if (minAI && (e.textAI||0) < minAI) return false;
-    if (alignment === 'primary' && !(e.fullResult && (e.fullResult.matches||[]).some(function(m){return !m.secondary;}))) return false;
-    if (alignment === 'secondary' && !(e.fullResult && (e.fullResult.matches||[]).some(function(m){return m.secondary;}))) return false;
-    if (alignment === 'none' && (e.fullResult && (e.fullResult.matches||[]).length > 0)) return false;
+    // Alignment type
+    if (alignment === 'primary' && !(e.fullResult && (e.fullResult.matches||[]).some(function(m){ return !m.secondary; }))) return false;
+    if (alignment === 'secondary' && !(e.fullResult && (e.fullResult.matches||[]).some(function(m){ return m.secondary; }))) return false;
+    if (alignment === 'none' && e.fullResult && (e.fullResult.matches||[]).length > 0) return false;
+    // Has comment
     if (hasComment === 'true' && !(e.comment && e.comment.trim())) return false;
     return true;
   });
@@ -1366,10 +1381,11 @@ async function saveToHistory(url, postText, result, srvVersion) {
   const srvVer = srvVersion || (serverUrl ? await fetchSrvVersion(serverUrl) : '?');
   const scanId = generateScanId(APP_VERSION, srvVer);
   const platform = detectPlatformClient(url);
+  const now = new Date();
   const entry = {
-    id: Date.now(),
+    id: now.getTime(),
     scanId: scanId,
-    ts: new Date().toISOString(),
+    ts: now.toISOString(),
     url: url,
     platform: platform,
     postText: (postText||'').slice(0, 500),
@@ -1383,8 +1399,13 @@ async function saveToHistory(url, postText, result, srvVersion) {
     comment: '',
     fullResult: result
   };
-  // Save to localStorage cache
-  const h = getHistory();
+  // Save to localStorage — keyed by scanId to prevent duplicates on sync
+  const h = getHistory().filter(function(e){
+    // Remove any existing entry with same scanId or same url+minute
+    const tsMin = e.ts ? e.ts.slice(0,16) : '';
+    const newTsMin = entry.ts.slice(0,16);
+    return e.scanId !== scanId && !(e.url === url && tsMin === newTsMin);
+  });
   h.unshift(entry);
   if (h.length > 500) h.splice(500);
   saveHistory(h);
