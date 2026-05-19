@@ -1,6 +1,6 @@
 ## Changelog
 
-### v2.0.0 — Admin milestone
+### v2.0.0 (admin) | Server: v1.11.0 | Client: v1.0.1
 - New design: Nunito font, light blue background, navy topbar, rounded cards
 - Two scan counters: Admin scans + Client scans (separate tracking)
 - History filters: added Source (Admin/Client) and User (usr_XXXX) filters
