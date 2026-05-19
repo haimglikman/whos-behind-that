@@ -1,5 +1,11 @@
 ## Changelog
 
+### v2.1.0 (admin) | Server: v1.11.0 | Client: v1.0.1
+- Fixed client scan counter not updating from history
+- Fixed source/user filters not working on client scans — sync now correctly maps source and deviceId fields
+- Fixed oversized alignment dial when replaying history entries
+- Browser tab title now shows "Who's Behind That? — Admin"
+
 ### v2.0.0 (admin) | Server: v1.11.0 | Client: v1.0.1
 - New design: Nunito font, light blue background, navy topbar, rounded cards
 - Two scan counters: Admin scans + Client scans (separate tracking)
