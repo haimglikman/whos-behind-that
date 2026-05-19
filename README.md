@@ -1,5 +1,13 @@
 ## Changelog
 
+### v2.0.0 — Admin milestone
+- New design: Nunito font, light blue background, navy topbar, rounded cards
+- Two scan counters: Admin scans + Client scans (separate tracking)
+- History filters: added Source (Admin/Client) and User (usr_XXXX) filters
+- Client scans now visible in admin history with source and user badges
+- Fixed _cachedSrvVersion bug that caused successful scans to save as failed
+- Bottom status bar with live server status, app and server versions
+
 ### v1.13.3 — bug fix
 - Fixed _cachedSrvVersion is not defined error that caused successful analyses to save as failed
 - saveToHistory errors no longer bubble up to trigger failed scan entries
