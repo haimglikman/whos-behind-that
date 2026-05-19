@@ -1,5 +1,8 @@
 ## Changelog
 
+### v2.1.1 — bug fix (admin) | Server: v1.11.0 | Client: v1.0.1
+- Fixed all tabs except Analyze being inaccessible — pages were accidentally nested inside page-analyze due to unclosed page-content div
+
 ### v2.1.0 (admin) | Server: v1.11.0 | Client: v1.0.1
 - Fixed client scan counter not updating from history
 - Fixed source/user filters not working on client scans — sync now correctly maps source and deviceId fields
