@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Who's Behind That?</title>
+<title>Who's Behind That? — Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -216,7 +216,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.0.0</div>
+      <div class="version-badge" id="version-badge">v2.1.0</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -313,21 +313,25 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         </div>
 
         <div class="results" id="results">
-          <div class="result-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <span class="result-url" id="result-url-label"></span>
             <button class="btn btn-sm" onclick="resetAnalysis()">New analysis</button>
           </div>
-          <div class="overall-card">
-            <div class="risk-dial">
-              <svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="6"/><circle cx="40" cy="40" r="32" fill="none" stroke-width="6" id="dial-circle" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dashoffset 0.8s ease"/></svg>
-              <div class="risk-num" id="dial-num"></div>
+          <div class="analysis-card">
+            <div class="dial-area">
+              <div class="dial-circle-wrap">
+                <svg width="60" height="60" viewBox="0 0 60 60">
+                  <circle cx="30" cy="30" r="24" fill="none" stroke="var(--blue-mid)" stroke-width="5"/>
+                  <circle cx="30" cy="30" r="24" fill="none" stroke="var(--blue)" stroke-width="5" id="dial-circle" stroke-dasharray="150.8" stroke-dashoffset="150.8" stroke-linecap="round" transform="rotate(-90 30 30)" style="transition:stroke-dashoffset 0.6s ease"/>
+                </svg>
+                <div class="dial-num" id="dial-num">0%</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Strongest narrative alignment</div>
+                <div class="r-overall-label" id="r-overall-label">—</div>
+                <div class="r-overall-desc" id="r-overall-desc"></div>
+              </div>
             </div>
-            <div>
-              <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Strongest narrative alignment</div>
-              <div style="font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px" id="r-overall-label"></div>
-              <div style="font-size:12px;color:var(--text2);line-height:1.55;max-width:380px" id="r-overall-desc"></div>
-            </div>
-          </div>
           <div class="grid-2">
             <div class="analysis-card">
               <div class="card-label">Text analysis</div>
@@ -843,7 +847,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -901,6 +905,11 @@ function updateScanCounter() {
     const d = new Date(s.last);
     document.getElementById('scan-last').textContent = 'Last: ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }
+  // Count client scans from history
+  const h = getHistory();
+  const clientCount = h.filter(function(e){ return e.source === 'client' && !e.failed; }).length;
+  const clientCountEl = document.getElementById('scan-client-total');
+  if (clientCountEl) clientCountEl.textContent = clientCount;
 }
 
 // ─────────────────────────────────────────────
@@ -1249,8 +1258,8 @@ function showResults(url, d) {
   const pct = (typeof d.overall.score === 'number' && !isNaN(d.overall.score)) ? d.overall.score : 0;
   const color = alignmentColor(pct);
   const circle = document.getElementById('dial-circle');
-  circle.style.strokeDashoffset = 201 - (201 * pct / 100);
-  circle.style.stroke = color;
+  circle.style.strokeDashoffset = 150.8 - (150.8 * pct / 100);
+  circle.style.stroke = pct > 0 ? color : 'var(--blue-mid)';
   document.getElementById('dial-num').textContent = pct + '%';
   document.getElementById('dial-num').style.color = color;
   document.getElementById('r-overall-label').textContent = d.overall.label;
@@ -1548,26 +1557,31 @@ async function syncHistoryFromServer() {
       if (existing) {
         existing.comment = s.comment || existing.comment || '';
         existing.scanId = s.id;
-        // Preserve local fullResult if server doesn't have it
+        existing.source = s.source || existing.source || 'admin';
+        existing.deviceId = s.deviceId || existing.deviceId || null;
         if (s.fullResult) existing.fullResult = s.fullResult;
         return;
       }
-      // Try match by url+timestamp (catches entries saved before scanId was stable)
+      // Try match by url+timestamp
       const tsMin = s.ts ? String(s.ts).slice(0,16) : '';
       const urlKey = s.url + '|' + tsMin;
       const existingByUrl = byUrlTs[urlKey];
       if (existingByUrl) {
-        existingByUrl.scanId = s.id; // upgrade to proper scanId
+        existingByUrl.scanId = s.id;
         existingByUrl.comment = s.comment || existingByUrl.comment || '';
-        byScanId[s.id] = existingByUrl; // re-index by new scanId
+        existingByUrl.source = s.source || existingByUrl.source || 'admin';
+        existingByUrl.deviceId = s.deviceId || existingByUrl.deviceId || null;
+        byScanId[s.id] = existingByUrl;
         return;
       }
-      // Genuinely new entry from another user's device
       byScanId[s.id] = {
         id: new Date(s.ts).getTime(),
         scanId: s.id,
         ts: s.ts,
         url: s.url,
+        platform: s.platform || 'unknown',
+        source: s.source || 'admin',
+        deviceId: s.deviceId || null,
         postText: s.postText || '',
         overallScore: s.overallScore || 0,
         overallLabel: s.overallLabel || '',
@@ -1953,7 +1967,7 @@ function fetchServerVersion(serverUrl) {
 <div class="bottom-bar">
   <span><span class="status-dot" id="bar-status-dot" style="background:var(--amber)"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.0.0</span></span>
+  <span>app v<span id="bar-app-ver">2.1.0</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
