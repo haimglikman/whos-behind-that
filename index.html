@@ -216,7 +216,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.1.0</div>
+      <div class="version-badge" id="version-badge">v2.1.1</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -399,14 +399,15 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           </div>
         </div>
       </div>
-    </div>
+    </div><!-- end page-content -->
+    </div><!-- end page-analyze -->
 
     <!-- ── HISTORY PAGE ── -->
     <div id="page-history" class="page">
+      <div class="page-content">
       <div class="page-header">
         <div><h1>Post history</h1><p>All posts analyzed — shared across all users</p></div>
       </div>
-      <div style="padding:24px 36px">
         <div class="history-filters">
           <div class="filter-grid">
             <div class="filter-group">
@@ -483,16 +484,16 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           </div>
         </div>
         <div id="history-list"></div>
-      </div>
-    </div>
+      </div><!-- end page-content -->
+    </div><!-- end page-history -->
 
     <!-- ── DATABASE PAGE ── -->
     <div id="page-database" class="page">
-      <div class="page-header">
+      <div class="page-content">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
         <div><h1>Entity database</h1><p>Israeli-Palestinian conflict — edit, add, or remove entities</p></div>
         <button class="btn btn-sm btn-primary" onclick="toggleAddForm()">+ Add entity</button>
       </div>
-      <div style="padding:24px 36px">
         <div class="add-form" id="add-form">
           <h3>New entity</h3>
           <div class="form-grid">
@@ -517,13 +518,13 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <span style="font-size:12px;color:var(--text3);margin-left:auto" id="db-count-label"></span>
         </div>
         <div id="db-list"></div>
-      </div>
-    </div>
+      </div><!-- end page-content -->
+    </div><!-- end page-database -->
 
     <!-- ── ABOUT PAGE ── -->
     <div id="page-about" class="page">
+      <div class="page-content">
       <div class="page-header"><div><h1>About & setup</h1><p>How to use and deploy this tool</p></div></div>
-      <div style="padding:24px 36px">
         <div class="about-section">
 
           <h2>Changelog</h2>
@@ -662,19 +663,19 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <div class="step-card"><div class="step-num">11</div><div class="step-body"><h4>Update package.json</h4><p>Upload the new <code>package.json</code> to your <code>whos-behind-that-server</code> GitHub repo — it now includes the <code>pg</code> database driver. The table is created automatically on first server start.</p></div></div>
           <div class="step-card"><div class="step-num">12</div><div class="step-body"><h4>Verify</h4><p>Visit your Render server URL in a browser. You should see <code>"db": true</code> in the response JSON, confirming the database is connected. All scans will now be shared across all users.</p></div></div>
         </div>
-      </div>
-    </div>
+      </div><!-- end page-content -->
+    </div><!-- end page-about -->
 
     <!-- ── ACTORS PAGE ── -->
     <div id="page-actors" class="page">
-      <div class="page-header">
+      <div class="page-content">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
         <div><h1>Actors</h1><p>Profiles of social media actors researched during post analysis</p></div>
         <button class="btn btn-sm btn-danger" onclick="clearActors()">Clear all</button>
       </div>
-      <div style="padding:24px 36px">
         <div id="actors-list"></div>
-      </div>
-    </div>
+      </div><!-- end page-content -->
+    </div><!-- end page-actors -->
 
   </div>
 </div>
@@ -847,7 +848,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.1.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1967,7 +1968,7 @@ function fetchServerVersion(serverUrl) {
 <div class="bottom-bar">
   <span><span class="status-dot" id="bar-status-dot" style="background:var(--amber)"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.1.0</span></span>
+  <span>app v<span id="bar-app-ver">2.1.1</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
