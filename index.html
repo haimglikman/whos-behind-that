@@ -216,7 +216,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.1.1</div>
+      <div class="version-badge" id="version-badge">v2.2.0</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -315,7 +315,8 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <div class="results" id="results">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <span class="result-url" id="result-url-label"></span>
-            <button class="btn btn-sm" onclick="resetAnalysis()">New analysis</button>
+            <span class="scan-id" id="result-scan-id" style="margin-left:4px"></span>
+            <button class="btn btn-sm" onclick="resetAnalysis()" style="margin-left:auto">New analysis</button>
           </div>
           <div class="analysis-card">
             <div class="dial-area">
@@ -848,7 +849,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.2.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -928,7 +929,25 @@ function showPage(name, el) {
   if (name === 'database') renderDB();
   if (name === 'history') { renderHistory(); syncHistoryFromServer(); }
   if (name === 'actors') renderActors();
+  // Update browser history for back/forward support
+  if (history.state && history.state.page !== name) {
+    history.pushState({ page: name }, '', '#' + name);
+  }
 }
+
+window.addEventListener('popstate', function(e) {
+  const name = (e.state && e.state.page) || (location.hash.replace('#','')) || 'analyze';
+  const el = document.getElementById('nav-' + name);
+  // Call showPage without pushing another history state
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById('page-' + name);
+  if (pageEl) pageEl.classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'database') renderDB();
+  if (name === 'history') { renderHistory(); syncHistoryFromServer(); }
+  if (name === 'actors') renderActors();
+});
 
 // ─────────────────────────────────────────────
 // TOAST
@@ -1157,9 +1176,10 @@ async function analyzeWithManualText() {
     const analysis = await res.json();
     advance(3); await delay(300); advance(4); await delay(300); advance(5); await delay(200);
     const result = buildResult(analysis, {text: postText}, entities);
-    showResults(url, result);
     const srvVer = await fetchSrvVersion(serverUrl);
-    await saveToHistory(url, postText, result, srvVer).catch(function(e){ console.warn('History save error:', e.message); });
+    const entry = await saveToHistory(url, postText, result, srvVer).catch(function(e){ console.warn('History save error:', e.message); return null; });
+    result.scanId = entry ? entry.scanId : '';
+    showResults(url, result);
     recordScan();
   } catch(e) {
     document.getElementById('loader').classList.remove('active');
@@ -1187,9 +1207,10 @@ async function performServerAnalysis(url, serverUrl) {
   advance(3); await delay(250); advance(4); await delay(250); advance(5); await delay(200);
   const data = await res.json();
   const result = buildResult(data.analysis, data.post, entities);
-  showResults(url, result);
   const srvVer = await fetchSrvVersion(serverUrl);
-  await saveToHistory(url, (data.post && data.post.text) || '', result, srvVer).catch(function(e){ console.warn('History save error:', e.message); });
+  const entry = await saveToHistory(url, (data.post && data.post.text) || '', result, srvVer).catch(function(e){ console.warn('History save error:', e.message); return null; });
+  result.scanId = entry ? entry.scanId : '';
+  showResults(url, result);
   recordScan();
 }
 
@@ -1239,6 +1260,8 @@ function showResults(url, d) {
   document.getElementById('loader').classList.remove('active');
   document.getElementById('results').classList.add('active');
   document.getElementById('result-url-label').textContent = url;
+  const scanIdEl = document.getElementById('result-scan-id');
+  if (scanIdEl) scanIdEl.textContent = d.scanId || '';
   currentResult = Object.assign({url: url}, d);
 
   document.getElementById('actor-prompt').style.display = 'none';
@@ -1385,8 +1408,8 @@ async function checkConvergentInterest(d) {
 // HISTORY — shared via server DB + local cache
 // ─────────────────────────────────────────────
 
-// Generate scan ID: WBT-{date}-{appVer}-{srvVer}-{random}
-function generateScanId(appVer, srvVer) {
+// Generate scan ID: WBT-{USER}-{date}-{appVer}-{srvVer}-{random}
+function generateScanId(appVer, srvVer, userPrefix) {
   const now = new Date();
   const date = now.getFullYear().toString() +
     String(now.getMonth()+1).padStart(2,'0') +
@@ -1394,7 +1417,8 @@ function generateScanId(appVer, srvVer) {
   const random = Math.random().toString(36).substring(2,6).toUpperCase();
   const av = (appVer||'?').replace(/\./g,'');
   const sv = (srvVer||'?').replace(/\./g,'');
-  return 'WBT-' + date + '-' + av + '-' + sv + '-' + random;
+  const user = userPrefix || 'ADMIN';
+  return 'WBT-' + user + '-' + date + '-' + av + '-' + sv + '-' + random;
 }
 
 // Migrate legacy localStorage entries to add missing fields
@@ -1402,46 +1426,71 @@ function migrateLocalHistory() {
   const h = getHistory();
   let changed = false;
 
-  // Add missing fields
   h.forEach(function(e) {
-    if (!e.scanId) { e.scanId = 'WBT-legacy-' + String(e.id||Date.now()); changed = true; }
+    // Convert numeric-only id to WBT format
+    if (!e.scanId || e.scanId === ('WBT-legacy-' + e.id)) {
+      const ts = e.ts ? new Date(e.ts) : new Date(e.id || Date.now());
+      const date = ts.getFullYear().toString() +
+        String(ts.getMonth()+1).padStart(2,'0') +
+        String(ts.getDate()).padStart(2,'0');
+      const av = (e.appVersion||'?').replace(/\./g,'');
+      const sv = (e.serverVersion||'?').replace(/\./g,'');
+      const rand = Math.abs(e.id||Date.now()).toString(36).slice(-4).toUpperCase();
+      const src = e.source || 'admin';
+      const user = src === 'admin' ? 'ADMIN' : hashToPrefix(e.deviceId||'');
+      e.scanId = 'WBT-' + user + '-' + date + '-' + av + '-' + sv + '-' + rand;
+      changed = true;
+    }
+    // Add ADMIN prefix to old WBT IDs that don't have a user segment
+    // Old format: WBT-20260519-... New format: WBT-ADMIN-20260519-...
+    if (e.scanId && /^WBT-\d{8}-/.test(e.scanId)) {
+      const src = e.source || 'admin';
+      const user = src === 'admin' ? 'ADMIN' : hashToPrefix(e.deviceId||'');
+      e.scanId = e.scanId.replace(/^WBT-/, 'WBT-' + user + '-');
+      changed = true;
+    }
     if (!e.appVersion) { e.appVersion = '≤v1.8.1'; changed = true; }
     if (!e.serverVersion) { e.serverVersion = '≤v1.4.1'; changed = true; }
     if (e.comment === undefined) { e.comment = ''; changed = true; }
+    if (!e.source) { e.source = 'admin'; changed = true; }
   });
 
-  // Remove numeric-id duplicates: if two entries share the same URL and
-  // one has a proper WBT-... scanId and one has a legacy numeric id, keep WBT only
+  // Remove duplicates: keep the entry with the proper WBT-USER-... scanId
   const seenUrls = {};
   const toKeep = [];
-  // Sort so WBT entries come before legacy entries
   const sorted = h.slice().sort(function(a,b) {
-    const aIsWbt = (a.scanId||'').startsWith('WBT-2');
-    const bIsWbt = (b.scanId||'').startsWith('WBT-2');
-    if (aIsWbt && !bIsWbt) return -1;
-    if (!aIsWbt && bIsWbt) return 1;
+    const aNew = /^WBT-[A-Z]+-\d{8}-/.test(a.scanId||'');
+    const bNew = /^WBT-[A-Z]+-\d{8}-/.test(b.scanId||'');
+    if (aNew && !bNew) return -1;
+    if (!aNew && bNew) return 1;
     return new Date(b.ts) - new Date(a.ts);
   });
   sorted.forEach(function(e) {
     const tsMin = e.ts ? e.ts.slice(0,16) : String(e.id);
     const key = e.url + '|' + tsMin;
-    if (!seenUrls[key]) {
-      seenUrls[key] = true;
-      toKeep.push(e);
-    } else {
-      changed = true; // dropped a duplicate
-    }
+    if (!seenUrls[key]) { seenUrls[key] = true; toKeep.push(e); }
+    else { changed = true; }
   });
-  // Re-sort by time descending
   toKeep.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
-
   if (changed) saveHistory(toKeep);
+}
+
+// Extract 4-char prefix from a device ID or hashed usr_XXXX string
+function hashToPrefix(deviceIdOrHash) {
+  if (!deviceIdOrHash) return 'UNKN';
+  // Already hashed as usr_XXXX or just XXXX
+  const m = (deviceIdOrHash).match(/([A-Z0-9]{4})$/i);
+  if (m) return m[1].toUpperCase();
+  // Raw device ID — hash it
+  let h = 0;
+  for (let i = 0; i < deviceIdOrHash.length; i++) h = (Math.imul(31, h) + deviceIdOrHash.charCodeAt(i)) | 0;
+  return Math.abs(h).toString(36).slice(0,4).toUpperCase();
 }
 
 async function saveToHistory(url, postText, result, srvVersion) {
   const serverUrl = getServerUrl();
   const srvVer = srvVersion || (serverUrl ? await fetchSrvVersion(serverUrl) : '?');
-  const scanId = generateScanId(APP_VERSION, srvVer);
+  const scanId = generateScanId(APP_VERSION, srvVer, 'ADMIN');
   const platform = detectPlatformClient(url);
   const now = new Date();
   const entry = {
@@ -1648,6 +1697,7 @@ function openHistoryEntry(id) {
   document.getElementById('nav-analyze').classList.add('active');
   document.getElementById('url-input').value = entry.url;
   document.getElementById('manual-text-fallback').style.display = 'none';
+  entry.fullResult.scanId = entry.scanId;
   showResults(entry.url, entry.fullResult);
 }
 
@@ -1936,6 +1986,16 @@ window.addEventListener('DOMContentLoaded', function() {
   updateActorsCount();
   fetchServerVersion(serverUrl);
   migrateLocalHistory();
+  // Handle initial hash navigation + init history state
+  const initPage = location.hash.replace('#','') || 'analyze';
+  if (initPage !== 'analyze' && document.getElementById('page-' + initPage)) {
+    const el = document.getElementById('nav-' + initPage);
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + initPage).classList.add('active');
+    if (el) el.classList.add('active');
+  }
+  history.replaceState({ page: initPage }, '', '#' + initPage);
 });
 
 function fetchServerVersion(serverUrl) {
@@ -1968,7 +2028,7 @@ function fetchServerVersion(serverUrl) {
 <div class="bottom-bar">
   <span><span class="status-dot" id="bar-status-dot" style="background:var(--amber)"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.1.1</span></span>
+  <span>app v<span id="bar-app-ver">2.2.0</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
