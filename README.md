@@ -1,5 +1,11 @@
 ## Changelog
 
+### v2.2.1 — bug fix (admin) | Server: v1.11.1 | Client: v1.2.1
+- Fixed migration for client scans with numeric IDs — now correctly uses usr_XXXX prefix (e.g. WBT-7XB1-...)
+- Fixed hashToPrefix to strip usr_ prefix rather than hashing it again
+- Back button from analyzed post now returns to history tab instead of looping through analyze→history→external
+- Scan ID pushed to URL hash when opening a history entry (#analyze/WBT-ADMIN-...)
+
 ### v2.2.0 (admin) | Server: v1.11.0 | Client: v1.2.0
 - Scan IDs now include user prefix: WBT-ADMIN-{date}-... for all admin scans
 - Retroactive migration: old WBT-{date}-... IDs upgraded to WBT-ADMIN-{date}-..., numeric IDs converted to WBT format
