@@ -1,5 +1,11 @@
 ## Changelog
 
+### v2.2.0 (admin) | Server: v1.11.0 | Client: v1.2.0
+- Scan IDs now include user prefix: WBT-ADMIN-{date}-... for all admin scans
+- Retroactive migration: old WBT-{date}-... IDs upgraded to WBT-ADMIN-{date}-..., numeric IDs converted to WBT format
+- Scan ID now shown in results header when viewing a post analysis
+- Browser back/forward buttons now navigate between tabs within the app
+
 ### v2.1.1 — bug fix (admin) | Server: v1.11.0 | Client: v1.0.1
 - Fixed all tabs except Analyze being inaccessible — pages were accidentally nested inside page-analyze due to unclosed page-content div
 
