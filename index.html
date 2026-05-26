@@ -216,7 +216,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.2.0</div>
+      <div class="version-badge" id="version-badge">v2.2.1</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -849,7 +849,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.2.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -936,9 +936,19 @@ function showPage(name, el) {
 }
 
 window.addEventListener('popstate', function(e) {
-  const name = (e.state && e.state.page) || (location.hash.replace('#','')) || 'analyze';
+  const hash = location.hash.replace('#','');
+  // If coming back from an analyzed entry (hash = analyze/WBT-...), go to history
+  if (hash.startsWith('analyze/')) {
+    const name = 'history';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-history').classList.add('active');
+    document.getElementById('nav-history').classList.add('active');
+    renderHistory(); syncHistoryFromServer();
+    return;
+  }
+  const name = (e.state && e.state.page) || hash || 'analyze';
   const el = document.getElementById('nav-' + name);
-  // Call showPage without pushing another history state
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pageEl = document.getElementById('page-' + name);
@@ -1428,7 +1438,7 @@ function migrateLocalHistory() {
 
   h.forEach(function(e) {
     // Convert numeric-only id to WBT format
-    if (!e.scanId || e.scanId === ('WBT-legacy-' + e.id)) {
+    if (!e.scanId || e.scanId.startsWith('WBT-legacy-')) {
       const ts = e.ts ? new Date(e.ts) : new Date(e.id || Date.now());
       const date = ts.getFullYear().toString() +
         String(ts.getMonth()+1).padStart(2,'0') +
@@ -1437,12 +1447,12 @@ function migrateLocalHistory() {
       const sv = (e.serverVersion||'?').replace(/\./g,'');
       const rand = Math.abs(e.id||Date.now()).toString(36).slice(-4).toUpperCase();
       const src = e.source || 'admin';
+      // For client scans, extract last 4 from usr_XXXX; for admin use ADMIN
       const user = src === 'admin' ? 'ADMIN' : hashToPrefix(e.deviceId||'');
       e.scanId = 'WBT-' + user + '-' + date + '-' + av + '-' + sv + '-' + rand;
       changed = true;
     }
-    // Add ADMIN prefix to old WBT IDs that don't have a user segment
-    // Old format: WBT-20260519-... New format: WBT-ADMIN-20260519-...
+    // Add user prefix to old WBT IDs that start with a date: WBT-20260519-...
     if (e.scanId && /^WBT-\d{8}-/.test(e.scanId)) {
       const src = e.source || 'admin';
       const user = src === 'admin' ? 'ADMIN' : hashToPrefix(e.deviceId||'');
@@ -1478,10 +1488,10 @@ function migrateLocalHistory() {
 // Extract 4-char prefix from a device ID or hashed usr_XXXX string
 function hashToPrefix(deviceIdOrHash) {
   if (!deviceIdOrHash) return 'UNKN';
-  // Already hashed as usr_XXXX or just XXXX
-  const m = (deviceIdOrHash).match(/([A-Z0-9]{4})$/i);
-  if (m) return m[1].toUpperCase();
-  // Raw device ID — hash it
+  // Already in usr_XXXX format — just strip the prefix
+  const usrMatch = deviceIdOrHash.match(/^usr_([A-Z0-9]{4})$/i);
+  if (usrMatch) return usrMatch[1].toUpperCase();
+  // Raw device ID — hash it the same way the server does
   let h = 0;
   for (let i = 0; i < deviceIdOrHash.length; i++) h = (Math.imul(31, h) + deviceIdOrHash.charCodeAt(i)) | 0;
   return Math.abs(h).toString(36).slice(0,4).toUpperCase();
@@ -1699,6 +1709,8 @@ function openHistoryEntry(id) {
   document.getElementById('manual-text-fallback').style.display = 'none';
   entry.fullResult.scanId = entry.scanId;
   showResults(entry.url, entry.fullResult);
+  // Push scan ID to URL so back button returns to history
+  history.pushState({ page: 'analyze', scanId: entry.scanId }, '', '#analyze/' + (entry.scanId||''));
 }
 
 function renderHistory() {
@@ -2028,7 +2040,7 @@ function fetchServerVersion(serverUrl) {
 <div class="bottom-bar">
   <span><span class="status-dot" id="bar-status-dot" style="background:var(--amber)"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.2.0</span></span>
+  <span>app v<span id="bar-app-ver">2.2.1</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
