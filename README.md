@@ -1,5 +1,12 @@
 ## Changelog
 
+### v2.3.0 (admin) | Server: v1.12.0 | Client: v1.4.0
+- Analyze tab: post text now shown below results header
+- Analyze tab: scan ID shown prominently with "Scan ID" label
+- Analyze tab: "↗ Open post" button next to URL
+- History filters: added Search by ID and Search by URL fields
+- History filters: Entity match replaced with multi-select with autocomplete — type to search, click to add, tags show selected entities
+
 ### v2.2.1 — bug fix (admin) | Server: v1.11.1 | Client: v1.2.1
 - Fixed migration for client scans with numeric IDs — now correctly uses usr_XXXX prefix (e.g. WBT-7XB1-...)
 - Fixed hashToPrefix to strip usr_ prefix rather than hashing it again
