@@ -1,5 +1,8 @@
 ## Changelog
 
+### v2.3.1 — bug fix (admin) | Server: v1.12.2 | Client: v1.5.1
+- X posts now stored with proper username URL (x.com/username/status/...) instead of /i/status/ format from mobile share sheet
+
 ### v2.3.0 (admin) | Server: v1.12.0 | Client: v1.4.0
 - Analyze tab: post text now shown below results header
 - Analyze tab: scan ID shown prominently with "Scan ID" label
