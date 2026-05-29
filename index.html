@@ -228,7 +228,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.3.0</div>
+      <div class="version-badge" id="version-badge">v2.3.1</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -879,7 +879,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1275,11 +1275,12 @@ async function performServerAnalysis(url, serverUrl) {
   advance(1); await delay(250); advance(2); await delay(250);
   advance(3); await delay(250); advance(4); await delay(250); advance(5); await delay(200);
   const data = await res.json();
+  const finalUrl = data.url || url;
   const result = buildResult(data.analysis, data.post, entities);
   const srvVer = await fetchSrvVersion(serverUrl);
-  const entry = await saveToHistory(url, (data.post && data.post.text) || '', result, srvVer).catch(function(e){ console.warn('History save error:', e.message); return null; });
+  const entry = await saveToHistory(finalUrl, (data.post && data.post.text) || '', result, srvVer).catch(function(e){ console.warn('History save error:', e.message); return null; });
   result.scanId = entry ? entry.scanId : '';
-  showResults(url, result);
+  showResults(finalUrl, result);
   recordScan();
 }
 
@@ -2106,7 +2107,7 @@ function fetchServerVersion(serverUrl) {
 <div class="bottom-bar">
   <span><span class="status-dot" id="bar-status-dot" style="background:var(--amber)"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.3.0</span></span>
+  <span>app v<span id="bar-app-ver">2.3.1</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
